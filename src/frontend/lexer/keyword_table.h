@@ -27,6 +27,8 @@ inline std::unordered_map<std::string, TokenType> get_keywords() {
         {"f32", TokenType::F32},
         {"f64", TokenType::F64},
         {"bool", TokenType::Bool},
+        {"true", TokenType::BoolLit},
+        {"false", TokenType::BoolLit},
         {"string", TokenType::String},
         {"char", TokenType::Char},
         {"void", TokenType::Void},

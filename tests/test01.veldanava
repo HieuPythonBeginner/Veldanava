@@ -1,4 +1,8 @@
-let x: i32 = 1;
-let y: i32 = 2;
-let z: i32 = x + y;
+for i in range(20):
+    print("Hello World");
+;
+let n: i32 = 0;
+while n < 10:
+    print("Hello while loop");
+    let i32 n = n + 1;
 ;

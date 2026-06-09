@@ -1,0 +1,13 @@
+let flag: bool = true;
+let name: string = "veldanava";
+let i: i32 = 0;
+while i < 3:
+    print(i);
+    let i: i32 = i + 1;
+;
+
+for j in range(3):
+    print(j);
+;
+
+print(name);

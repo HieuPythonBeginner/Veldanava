@@ -5,7 +5,7 @@ namespace lexer {
 
 enum class TokenType {
     Eof, Error,
-    IntLit, FloatLit, StringLit, CharLit, Ident,
+    IntLit, FloatLit, BoolLit, StringLit, CharLit, Ident,
     Add, Sub, Mul, Div, Mod,
     Assign, Eq, Ne, Lt, Gt, Le, Ge,
     And, Or, Not,

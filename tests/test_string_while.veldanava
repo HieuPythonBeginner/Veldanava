@@ -1,0 +1,5 @@
+let i: i32 = 0;
+while i < 3:
+    print("hello");
+    let i: i32 = i + 1;
+;

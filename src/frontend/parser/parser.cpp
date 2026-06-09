@@ -43,19 +43,29 @@ std::unique_ptr<ast::ProgramNode> Parser::parse() {
 
 std::unique_ptr<ast::Node> Parser::declaration() {
     if (check(lexer::TokenType::Semi)) {
-        advance();
-        return nullptr;
+        throw std::runtime_error("Unexpected ';' - not inside a block");
     }
     if (match(lexer::TokenType::Let) || match(lexer::TokenType::Const)) {
         auto decl = std::make_unique<ast::VarDeclNode>();
-        if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected identifier");
-        decl->name = advance().lexeme;
-        if (match(lexer::TokenType::Colon)) {
-            if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
-                check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
-                check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Void)) {
-                decl->type = advance().lexeme;
+        if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
+            check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
+            check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Void)) {
+            decl->type = advance().lexeme;
+            if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected identifier");
+            decl->name = advance().lexeme;
+        } else if (check(lexer::TokenType::Ident)) {
+            decl->name = advance().lexeme;
+            if (match(lexer::TokenType::Colon)) {
+                if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
+                    check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
+                    check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Void)) {
+                    decl->type = advance().lexeme;
+                } else {
+                    throw std::runtime_error("Expected type after ':'");
+                }
             }
+        } else {
+            throw std::runtime_error("Expected type or identifier after let/const");
         }
         if (match(lexer::TokenType::Assign)) {
             decl->initializer = expression();
@@ -293,6 +303,12 @@ std::unique_ptr<ast::Node> Parser::primary() {
     if (match(lexer::TokenType::FloatLit)) {
         auto lit = std::make_unique<ast::LiteralNode>();
         lit->kind = ast::LiteralKind::Float;
+        lit->value = prev().lexeme;
+        return lit;
+    }
+    if (match(lexer::TokenType::BoolLit)) {
+        auto lit = std::make_unique<ast::LiteralNode>();
+        lit->kind = ast::LiteralKind::Bool;
         lit->value = prev().lexeme;
         return lit;
     }
