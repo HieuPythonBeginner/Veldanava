@@ -6,22 +6,31 @@ Low-level/mid-level hybrid language. Systems programming + powerful scripting.
 - Block end: mandatory `;`
 - Statement termination: mandatory `;`
 
-## Keywords (Phase 1)
+## Keywords
+
+### Core Keywords
 
 | Category | Keywords |
 |----------|----------|
 | Control Flow | if, else, elif, while, for, break, continue, return |
-| Functions | func |
 | Variables | let, const |
 | Types | i32, i64, u32, u64, f32, f64, bool, void, char, string |
 
+### Permission-Based Keywords (God Mode)
+
+| Keyword | Description |
+|---------|-------------|
+| `Primordial_Regalia` | Bắt buộc ở đầu file để kích hoạt God Mode. Cho phép sử dụng genesis, Incorporate, Sanction. |
+| `genesis` | Tạo thực thể (thay thế func/class/struct/var). Yêu cầu Primordial_Regalia. |
+| `Incorporate` | Import modules/thư viện. Yêu cầu Primordial_Regalia. |
+| `Sanction` | Whitelist toán tử toàn file (plus, minus, multi, div, power, root). Yêu cầu Primordial_Regalia. |
+
 ## Indent-based Syntax (Python-style)
 
+### Standard Syntax
 ```veldanava
-func main() -> i32:
-    let i32 x = 42;
-    return x;
-;
+let i32 x = 42;
+return x;
 
 if x > 0:
     let i32 y = 1;
@@ -32,7 +41,6 @@ while true:
     break;
 ;
 
-# for-range loop
 for i in range(10):
     let i32 b = i;
 ;
@@ -40,9 +48,44 @@ for i in range(10):
 
 - Variable declaration: `let <type> <name> = <value>;` (type-first syntax)
 - For iterator: type inferred from range call
+- All blocks end with mandatory `;`
+
+### Genesis Syntax (God Mode)
+
+```veldanava
+Primordial_Regalia;
+
+genesis func main():
+    genesis let i32 n = 0;
+    genesis while n < 3:
+        print(n);
+        genesis let i32 n = n + 1;
+    ;
+;
+
+genesis func add(a, b):
+    return a + b;
+;
+
+Incorporate "math", io;
+
+Sanction:
+    plus;
+    minus;
+    multi;
+    div;
+;
+```
+
+- `Primordial_Regalia;` bắt buộc ở đầu file
+- **Declarations trong genesis scope cần `genesis` prefix** (let, func, class, struct)
+- Control flow (if/while/for) và function calls không cần genesis prefix
+- `Incorporate` import modules (string identifier hoặc bare identifier)
+- `Sanction` block whitelist toán tử số học (plus, minus, multi, div, power, root)
 
 ## Built-in Functions
 - `range(n)` — tạo iterator từ 0 đến n-1
+- `print(val)` — in giá trị ra stdout
 
 ## Statement Rules
 - All statements end with `;` (required)
