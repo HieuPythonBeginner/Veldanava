@@ -13,7 +13,7 @@ public:
     void load(const std::vector<Instruction>& bytecode);
     void set_strings(const std::vector<std::string>& pool);
     void add_string(const std::string& str);
-    void run();
+    void run(int max_instructions = 10000);
 
     void print_registers() const;
 

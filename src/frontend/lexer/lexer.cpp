@@ -14,8 +14,8 @@ public:
 
     Token next_token() {
         while (true) {
-            if (dedent_pending_) {
-                dedent_pending_ = false;
+            if (dedents_to_emit_ > 0) {
+                dedents_to_emit_--;
                 return Token(TokenType::Dedent, "", line_, col_);
             }
 
@@ -32,7 +32,6 @@ public:
             }
 
             if (at_line_start_) {
-                // Count indentation at start of line
                 int current_indent = 0;
                 while (pos_ < src_.size()) {
                     char c = src_[pos_];
@@ -40,14 +39,12 @@ public:
                     else if (c == '\t') { current_indent += 4; pos_++; }
                     else if (c == '\n') {
                         line_++; col_ = 0; pos_++;
-                        // Blank line - continue to next line
                         current_indent = 0;
-                        continue;
                     }
                     else break;
                 }
 
-                int prev_indent = indent_stack_.back();
+                int prev_indent = indent_stack_.empty() ? 0 : indent_stack_.back();
 
                 if (current_indent > prev_indent) {
                     indent_stack_.push_back(current_indent);
@@ -55,13 +52,19 @@ public:
                     at_line_start_ = false;
                     return Token(TokenType::Indent, "", line_, col_);
                 } else if (current_indent < prev_indent) {
-                    // Dedent needed - pop to find matching level
-                    indent_stack_.pop_back();
+                    int levels = 0;
+                    while (!indent_stack_.empty() && current_indent < indent_stack_.back()) {
+                        indent_stack_.pop_back();
+                        levels++;
+                    }
+                    if (!indent_stack_.empty() && current_indent != indent_stack_.back()) {
+                        throw std::runtime_error("Inconsistent indentation at line " + std::to_string(line_));
+                    }
+                    dedents_to_emit_ = levels - 1;
                     col_ = 0;
                     at_line_start_ = false;
                     return Token(TokenType::Dedent, "", line_, col_);
                 }
-                // Equal indent: position col and continue
                 col_ = current_indent;
                 at_line_start_ = false;
             }
@@ -119,7 +122,7 @@ private:
     size_t pos_;
     int line_, col_;
     bool at_line_start_;
-    bool dedent_pending_ = false;
+    int dedents_to_emit_ = 0;
     std::vector<int> indent_stack_;
 
     Token scan_number() {

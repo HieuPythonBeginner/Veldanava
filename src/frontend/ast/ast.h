@@ -23,6 +23,9 @@ enum class NodeKind {
     FuncCall,
     BreakStmt,
     ContinueStmt,
+    GenesisDecl,
+    IncorporateStmt,
+    SanctionBlock,
 };
 
 enum class BinaryOp {
@@ -142,6 +145,25 @@ struct BreakStmtNode : Node {
 
 struct ContinueStmtNode : Node {
     ContinueStmtNode() : Node(NodeKind::ContinueStmt) {}
+};
+
+struct GenesisDeclNode : Node {
+    std::string kind;
+    std::string name;
+    std::vector<std::pair<std::string, std::string>> params;
+    std::string return_type;
+    std::unique_ptr<Node> body;
+    GenesisDeclNode() : Node(NodeKind::GenesisDecl) {}
+};
+
+struct IncorporateNode : Node {
+    std::vector<std::string> modules;
+    IncorporateNode() : Node(NodeKind::IncorporateStmt) {}
+};
+
+struct SanctionBlockNode : Node {
+    std::vector<std::string> operators;
+    SanctionBlockNode() : Node(NodeKind::SanctionBlock) {}
 };
 
 }

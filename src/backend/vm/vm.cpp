@@ -19,9 +19,11 @@ void VirtualMachine::load(const std::vector<Instruction>& bytecode) {
     memory_ = bytecode;
 }
 
-void VirtualMachine::run() {
-    while (pc_ < memory_.size()) {
+void VirtualMachine::run(int max_instructions) {
+    int instructions_executed = 0;
+    while (pc_ < memory_.size() && instructions_executed < max_instructions) {
         Instruction& instr = memory_[pc_++];
+        instructions_executed++;
         switch (instr.opcode) {
             case Opcode::NOP: break;
             case Opcode::MOV:

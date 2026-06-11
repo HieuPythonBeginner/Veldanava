@@ -1,0 +1,3 @@
+print('She said "Hello"');
+print("It's working");
+print("Mix 'single' and \"double\"");

@@ -5,9 +5,7 @@
 namespace parser {
 
 Parser::Parser(const std::vector<lexer::Token>& tokens)
-    : tokens_(tokens), pos_(0) {
-    indent_stack_.push_back(0);
-}
+    : tokens_(tokens), pos_(0), has_primordial_regalia_(false) {}
 
 lexer::Token Parser::peek() const {
     if (pos_ < tokens_.size()) return tokens_[pos_];
@@ -32,50 +30,40 @@ bool Parser::check(lexer::TokenType type) const {
     return peek().type == type;
 }
 
+void Parser::check_permission(const std::string& feature) {
+    if (!has_primordial_regalia_) {
+        throw std::runtime_error("Permission denied: '" + feature + "' requires Primordial_Regalia at the start of the file");
+    }
+}
+
 std::unique_ptr<ast::ProgramNode> Parser::parse() {
     auto program = std::make_unique<ast::ProgramNode>();
+
+    if (!check(lexer::TokenType::Primordial_Regalia)) {
+        throw std::runtime_error("Missing Primordial_Regalia at the start of the file");
+    }
+    advance();
+    if (!match(lexer::TokenType::Semi)) {
+        throw std::runtime_error("Expected ';' after Primordial_Regalia");
+    }
+    has_primordial_regalia_ = true;
+
     while (!check(lexer::TokenType::Eof)) {
-        auto stmt = declaration();
+        if (!match(lexer::TokenType::Genesis)) {
+            throw std::runtime_error("Permission denied: top-level declarations require 'genesis' prefix");
+        }
+        check_permission("genesis");
+        auto stmt = genesis_declaration();
         if (stmt) program->statements.push_back(std::move(stmt));
     }
     return program;
 }
 
-std::unique_ptr<ast::Node> Parser::declaration() {
-    if (check(lexer::TokenType::Semi)) {
-        throw std::runtime_error("Unexpected ';' - not inside a block");
-    }
-    if (match(lexer::TokenType::Let) || match(lexer::TokenType::Const)) {
-        auto decl = std::make_unique<ast::VarDeclNode>();
-        if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
-            check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
-            check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Void)) {
-            decl->type = advance().lexeme;
-            if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected identifier");
-            decl->name = advance().lexeme;
-        } else if (check(lexer::TokenType::Ident)) {
-            decl->name = advance().lexeme;
-            if (match(lexer::TokenType::Colon)) {
-                if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
-                    check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
-                    check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Void)) {
-                    decl->type = advance().lexeme;
-                } else {
-                    throw std::runtime_error("Expected type after ':'");
-                }
-            }
-        } else {
-            throw std::runtime_error("Expected type or identifier after let/const");
-        }
-        if (match(lexer::TokenType::Assign)) {
-            decl->initializer = expression();
-        }
-        if (!match(lexer::TokenType::Semi)) throw std::runtime_error("Expected ';'");
-        return decl;
-    }
+std::unique_ptr<ast::Node> Parser::genesis_declaration() {
     if (match(lexer::TokenType::Func)) {
-        auto func = std::make_unique<ast::FuncDefNode>();
-        if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected function name");
+        auto func = std::make_unique<ast::GenesisDeclNode>();
+        func->kind = "func";
+        if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected function name after genesis func");
         func->name = advance().lexeme;
         if (check(lexer::TokenType::LParen)) {
             advance();
@@ -85,7 +73,8 @@ std::unique_ptr<ast::Node> Parser::declaration() {
                 if (!match(lexer::TokenType::Colon)) throw std::runtime_error("Expected ':'");
                 if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
                     check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
-                    check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Void)) {
+                    check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Char) ||
+                    check(lexer::TokenType::Void)) {
                     std::string type = advance().lexeme;
                     func->params.push_back({name, type});
                 } else {
@@ -100,7 +89,7 @@ std::unique_ptr<ast::Node> Parser::declaration() {
             if (!check(lexer::TokenType::Ident) && !check(lexer::TokenType::I32) && !check(lexer::TokenType::I64) &&
                 !check(lexer::TokenType::U32) && !check(lexer::TokenType::U64) && !check(lexer::TokenType::F32) &&
                 !check(lexer::TokenType::F64) && !check(lexer::TokenType::Bool) && !check(lexer::TokenType::String) &&
-                !check(lexer::TokenType::Void)) throw std::runtime_error("Expected return type");
+                !check(lexer::TokenType::Char) && !check(lexer::TokenType::Void)) throw std::runtime_error("Expected return type");
             func->return_type = advance().lexeme;
         }
         if (match(lexer::TokenType::Colon)) {
@@ -108,21 +97,131 @@ std::unique_ptr<ast::Node> Parser::declaration() {
                 throw std::runtime_error("Expected indent after ':'");
             }
             advance();
-            func->body = block_body();
+            func->body = genesis_block_body();
         } else {
-            throw std::runtime_error("Expected ':' after function parameters");
+            throw std::runtime_error("Expected ':' after genesis func parameters");
         }
         return func;
     }
-    return statement();
+
+    if (match(lexer::TokenType::Class)) {
+        auto func = std::make_unique<ast::GenesisDeclNode>();
+        func->kind = "class";
+        if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected class name after genesis class");
+        func->name = advance().lexeme;
+        if (match(lexer::TokenType::Colon)) {
+            if (!check(lexer::TokenType::Indent)) {
+                throw std::runtime_error("Expected indent after ':'");
+            }
+            advance();
+            func->body = genesis_block_body();
+        } else {
+            throw std::runtime_error("Expected ':' after genesis class");
+        }
+        return func;
+    }
+
+    if (match(lexer::TokenType::Struct)) {
+        auto func = std::make_unique<ast::GenesisDeclNode>();
+        func->kind = "struct";
+        if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected struct name after genesis struct");
+        func->name = advance().lexeme;
+        if (match(lexer::TokenType::Colon)) {
+            if (!check(lexer::TokenType::Indent)) {
+                throw std::runtime_error("Expected indent after ':'");
+            }
+            advance();
+            func->body = genesis_block_body();
+        } else {
+            throw std::runtime_error("Expected ':' after genesis struct");
+        }
+        return func;
+    }
+
+    if (match(lexer::TokenType::Var)) {
+        auto func = std::make_unique<ast::GenesisDeclNode>();
+        func->kind = "var";
+        if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected variable name after genesis var");
+        func->name = advance().lexeme;
+        if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
+            check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
+            check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Char) ||
+            check(lexer::TokenType::Void)) {
+            func->return_type = advance().lexeme;
+        }
+        if (match(lexer::TokenType::Assign)) {
+            func->body = expression();
+        }
+        if (!match(lexer::TokenType::Semi)) throw std::runtime_error("Expected ';' after genesis var");
+        return func;
+    }
+
+    if (match(lexer::TokenType::Incorporate)) {
+        return parse_incorporate();
+    }
+
+    throw std::runtime_error("Expected func, class, struct, var, or Incorporate after genesis");
 }
 
-std::unique_ptr<ast::Node> Parser::statement() {
-    if (match(lexer::TokenType::Indent)) {
-        return block_body();
+std::unique_ptr<ast::Node> Parser::parse_incorporate() {
+    check_permission("Incorporate");
+    auto inc = std::make_unique<ast::IncorporateNode>();
+    do {
+        if (check(lexer::TokenType::StringLit)) {
+            inc->modules.push_back(advance().lexeme);
+        } else if (check(lexer::TokenType::Ident)) {
+            inc->modules.push_back(advance().lexeme);
+        } else {
+            throw std::runtime_error("Expected module name (identifier or string) after Incorporate");
+        }
+    } while (match(lexer::TokenType::Comma));
+    if (!match(lexer::TokenType::Semi)) throw std::runtime_error("Expected ';' after Incorporate");
+    return inc;
+}
+
+std::unique_ptr<ast::Node> Parser::parse_sanction() {
+    check_permission("Sanction");
+    auto san = std::make_unique<ast::SanctionBlockNode>();
+    if (!match(lexer::TokenType::Colon)) throw std::runtime_error("Expected ':' after Sanction");
+    if (!check(lexer::TokenType::Indent)) throw std::runtime_error("Expected indent after ':'");
+    advance();
+    while (!check(lexer::TokenType::Dedent) && !check(lexer::TokenType::Eof)) {
+        if (check(lexer::TokenType::Ident)) {
+            san->operators.push_back(advance().lexeme);
+        } else {
+            throw std::runtime_error("Expected operator identifier in Sanction block");
+        }
+        if (!match(lexer::TokenType::Semi)) throw std::runtime_error("Expected ';' after operator in Sanction");
     }
-    if (match(lexer::TokenType::Dedent)) {
-        throw std::runtime_error("Unexpected dedent");
+    if (check(lexer::TokenType::Dedent)) {
+        match(lexer::TokenType::Dedent);
+    }
+    if (!match(lexer::TokenType::Semi)) throw std::runtime_error("Expected ';' after Sanction block");
+    return san;
+}
+
+std::unique_ptr<ast::Node> Parser::genesis_statement() {
+    if (match(lexer::TokenType::Sanction)) {
+        return parse_sanction();
+    }
+    if (match(lexer::TokenType::Let) || match(lexer::TokenType::Const)) {
+        auto decl = std::make_unique<ast::VarDeclNode>();
+        if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
+            check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
+            check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Char) ||
+            check(lexer::TokenType::Void)) {
+            decl->type = advance().lexeme;
+            if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected identifier after type");
+            decl->name = advance().lexeme;
+        } else {
+            throw std::runtime_error("Expected type after let/const");
+        }
+        decl->is_mutable = true;
+        if (match(lexer::TokenType::Assign)) {
+            decl->initializer = expression();
+        }
+        if (!match(lexer::TokenType::Semi)) throw std::runtime_error("Expected ';'");
+        return decl;
     }
     if (match(lexer::TokenType::If)) {
         auto ifstmt = std::make_unique<ast::IfStmtNode>();
@@ -136,12 +235,12 @@ std::unique_ptr<ast::Node> Parser::statement() {
         if (!match(lexer::TokenType::Colon)) throw std::runtime_error("Expected ':'");
         if (!check(lexer::TokenType::Indent)) throw std::runtime_error("Expected indent after ':'");
         advance();
-        ifstmt->then_block = block_body();
+        ifstmt->then_block = genesis_block_body();
         if (match(lexer::TokenType::Else)) {
             if (!match(lexer::TokenType::Colon)) throw std::runtime_error("Expected ':'");
             if (!check(lexer::TokenType::Indent)) throw std::runtime_error("Expected indent after ':'");
             advance();
-            ifstmt->else_block = block_body();
+            ifstmt->else_block = genesis_block_body();
         }
         return ifstmt;
     }
@@ -157,7 +256,7 @@ std::unique_ptr<ast::Node> Parser::statement() {
         if (!match(lexer::TokenType::Colon)) throw std::runtime_error("Expected ':'");
         if (!check(lexer::TokenType::Indent)) throw std::runtime_error("Expected indent after ':'");
         advance();
-        whilestmt->body = block_body();
+        whilestmt->body = genesis_block_body();
         return whilestmt;
     }
     if (match(lexer::TokenType::For)) {
@@ -170,7 +269,7 @@ std::unique_ptr<ast::Node> Parser::statement() {
         if (!match(lexer::TokenType::Colon)) throw std::runtime_error("Expected ':'");
         if (!check(lexer::TokenType::Indent)) throw std::runtime_error("Expected indent after ':'");
         advance();
-        forstmt->body = block_body();
+        forstmt->body = genesis_block_body();
         return forstmt;
     }
     if (match(lexer::TokenType::Return)) {
@@ -187,9 +286,23 @@ std::unique_ptr<ast::Node> Parser::statement() {
         if (!match(lexer::TokenType::Semi)) throw std::runtime_error("Expected ';'");
         return std::make_unique<ast::ContinueStmtNode>();
     }
+    if (match(lexer::TokenType::Func)) {
+        return genesis_declaration();
+    }
+    if (match(lexer::TokenType::Class)) {
+        return genesis_declaration();
+    }
+    if (match(lexer::TokenType::Struct)) {
+        return genesis_declaration();
+    }
+    if (match(lexer::TokenType::Var)) {
+        return genesis_declaration();
+    }
+    if (match(lexer::TokenType::Incorporate)) {
+        return parse_incorporate();
+    }
     if (check(lexer::TokenType::Ident)) {
         size_t save_pos = pos_;
-        lexer::TokenType save_type = peek().type;
         advance();
         if (check(lexer::TokenType::LParen)) {
             pos_ = save_pos;
@@ -207,21 +320,25 @@ std::unique_ptr<ast::Node> Parser::statement() {
         }
         pos_ = save_pos;
     }
-    return expression();
+    throw std::runtime_error("Unexpected token after genesis: " + peek().lexeme);
 }
 
-std::unique_ptr<ast::Node> Parser::block_body() {
+std::unique_ptr<ast::Node> Parser::genesis_block_body() {
     auto block = std::make_unique<ast::BlockNode>();
     while (!check(lexer::TokenType::Dedent) && !check(lexer::TokenType::Eof)) {
-        auto stmt = declaration();
+        if (!match(lexer::TokenType::Genesis)) {
+            throw std::runtime_error("Expected 'genesis' prefix for all statements in genesis scope");
+        }
+        auto stmt = genesis_statement();
         if (stmt) block->statements.push_back(std::move(stmt));
     }
-    if (check(lexer::TokenType::Dedent)) {
+    while (check(lexer::TokenType::Dedent)) {
         match(lexer::TokenType::Dedent);
     }
-    if (check(lexer::TokenType::Semi)) {
-        match(lexer::TokenType::Semi);
+    if (!check(lexer::TokenType::Semi)) {
+        throw std::runtime_error("Expected ';' after dedent to close block");
     }
+    match(lexer::TokenType::Semi);
     return block;
 }
 
@@ -318,7 +435,6 @@ std::unique_ptr<ast::Node> Parser::primary() {
         lit->value = prev().lexeme;
         return lit;
     }
-    // Check for function call: ident followed by (
     if (check(lexer::TokenType::Ident)) {
         lexer::Token next = pos_ + 1 < tokens_.size() ? tokens_[pos_ + 1] : lexer::Token(lexer::TokenType::Eof, "");
         if (next.type == lexer::TokenType::LParen) {

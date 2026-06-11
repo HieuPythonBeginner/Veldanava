@@ -1,5 +1,13 @@
 {
-  "worktrees": {},
+  "worktrees": {
+    "wt-1781073773616-1": {
+      "branch": "traveling-wallet",
+      "path": "/home/dr-bright-rathalus/Veldanava/.kilo/worktrees/traveling-wallet",
+      "parentBranch": "main",
+      "createdAt": "2026-06-10T06:42:53.616Z",
+      "remote": "origin"
+    }
+  },
   "sessions": {
     "ses_15b529d00ffeU6jwP57lRk10Md": {
       "worktreeId": null,
@@ -8,11 +16,18 @@
     "ses_15b509224ffewT9Ro2lszcSpTG": {
       "worktreeId": null,
       "createdAt": "2026-06-08T00:43:40.898Z"
+    },
+    "ses_14fbaf5a1ffemS8Zu3J9IVpY2n": {
+      "worktreeId": "wt-1781073773616-1",
+      "createdAt": "2026-06-10T06:42:55.220Z"
     }
   },
   "tabOrder": {
     "local": [
       "pending:1"
     ]
-  }
+  },
+  "worktreeOrder": [
+    "wt-1781073773616-1"
+  ]
 }

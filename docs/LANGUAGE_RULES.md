@@ -19,24 +19,27 @@ Low-level/mid-level hybrid language. Systems programming + powerful scripting.
 
 ```veldanava
 func main() -> i32:
-    let x: i32 = 42;
+    let i32 x = 42;
     return x;
 ;
 
 if x > 0:
-    let y: i32 = 1;
+    let i32 y = 1;
 ;
 
 while true:
-    let a: i32 = 1;
+    let i32 a = 1;
     break;
 ;
 
 # for-range loop
 for i in range(10):
-    let b: i32 = i;
+    let i32 b = i;
 ;
 ```
+
+- Variable declaration: `let <type> <name> = <value>;` (type-first syntax)
+- For iterator: type inferred from range call
 
 ## Built-in Functions
 - `range(n)` — tạo iterator từ 0 đến n-1

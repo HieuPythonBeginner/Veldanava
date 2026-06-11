@@ -15,7 +15,7 @@ public:
 private:
     const std::vector<lexer::Token>& tokens_;
     size_t pos_;
-    std::vector<int> indent_stack_;
+    bool has_primordial_regalia_ = false;
 
     lexer::Token peek() const;
     lexer::Token prev() const;
@@ -34,6 +34,15 @@ private:
     std::unique_ptr<ast::Node> factor();
     std::unique_ptr<ast::Node> unary();
     std::unique_ptr<ast::Node> primary();
+
+    std::unique_ptr<ast::Node> parse_genesis();
+    std::unique_ptr<ast::Node> parse_incorporate();
+    std::unique_ptr<ast::Node> parse_sanction();
+    void check_permission(const std::string& feature);
+
+    std::unique_ptr<ast::Node> genesis_declaration();
+    std::unique_ptr<ast::Node> genesis_statement();
+    std::unique_ptr<ast::Node> genesis_block_body();
 };
 
 std::unique_ptr<ast::ProgramNode> parse_source(const std::string& src);
