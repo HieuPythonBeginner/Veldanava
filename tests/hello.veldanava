@@ -1,5 +1,6 @@
-func main() -> i32:
-    let x: i32 = 42;
-    print(x);
-    return x;
+Primordial_Regalia;
+
+genesis func main():
+    genesis let i32 x = 42;
+    genesis print(x);
 ;

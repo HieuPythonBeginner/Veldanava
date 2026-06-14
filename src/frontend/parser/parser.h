@@ -46,5 +46,6 @@ private:
 };
 
 std::unique_ptr<ast::ProgramNode> parse_source(const std::string& src);
+void validate_sanctions(ast::ProgramNode* program);
 
 }

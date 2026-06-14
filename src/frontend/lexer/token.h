@@ -12,7 +12,7 @@ enum class TokenType {
     RArrow,
     LParen, RParen, LBrace, RBrace, LBracket, RBracket,
     Comma, Semi, Colon, Dot,
-    If, Else, While, For, Return, Break, Continue,
+    If, Else, Elif, While, For, Return, Break, Continue,
     In,
     Let, Const, Var, Func, Class, Struct,
     Genesis, Incorporate, Sanction, Primordial_Regalia,

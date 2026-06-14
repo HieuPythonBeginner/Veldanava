@@ -8,8 +8,16 @@
 
 using namespace std;
 
+static void debug_print_tokens(const std::string& src) {
+    auto tokens = lexer::tokenize(src);
+    for (const auto& t : tokens) {
+        cout << (int)t.type << "\t" << t.lexeme << "\t" << t.line << ":" << t.col << "\n";
+    }
+}
+
 int main(int argc, char** argv) {
     if (argc > 1) {
+
         ifstream file(argv[1]);
         if (!file.is_open()) {
             cerr << "Error: Cannot open file " << argv[1] << "\n";
@@ -20,7 +28,13 @@ int main(int argc, char** argv) {
         string src = buffer.str();
 
         try {
+
+
             auto program = parser::parse_source(src);
+            parser::validate_sanctions(program.get());
+
+
+
             codegen::CodeGenerator gen;
             auto bytecode = gen.generate(program.get());
             vm::VirtualMachine vm;

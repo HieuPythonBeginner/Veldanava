@@ -1,1 +1,5 @@
-print("missing primordial regalia");
+Primordial_Regalia;
+
+genesis func main():
+    genesis print("missing primordial regalia should be rejected");
+;

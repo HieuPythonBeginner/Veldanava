@@ -1,105 +1,177 @@
 # Plan: Permission-based Keywords System
 
-## Overview
-Thêm hệ thống keywords mới cho Veldanava nhằm hỗ trợ khai báo và kiểm soát quyền hạn (capabilities) khi sử dụng tài nguyên.
+## Current status
 
-## Phân tích hiện trạng
+Implemented subset:
 
-### Keywords hiện có (keyword_table.h)
-- **Control flow:** if, else, elif, while, for, break, continue, return
-- **Declarations:** let, const, func, class, struct
-- **Types:** i32, i64, u32, u64, f32, f64, bool, string, char, void
-- **Logic:** and, or, not
-- **Legacy (chưa implement):** manifest, grant, import
+- `Primordial_Regalia;` is required at file start.
+- `genesis` is used as the God Mode declaration/statement prefix.
+- `Incorporate` is parsed as a God Mode statement.
+- `sanction` is parsed as a lowercase flat whitelist block and enforced by semantic validation for arithmetic operators and non-built-in calls.
+- `if (cond):` and `while (cond):` are rejected.
 
-### AST hiện có (ast.h)
-- Có `OwnershipInfo` với `is_mutable`, `is_borrowed`, `scope_level`
-- Chưa có node cho permission/capability
+Not implemented yet:
 
-## Keywords mới (đã đổi tên)
+- Backend enforcement for `sanction` can still be expanded beyond current operator/call validation.
+- Minimal module tracking for `Incorporate`; known math functions require `genesis Incorporate "math";`.
+- Ownership/semantic pass; `ownership::init()` is currently a no-op.
+- Full class/struct backend support.
+- Legacy tests have been migrated to current syntax.
 
-### Permission Flow
-**QUAN TRỌNG:** `Primordial_Regalia` phải có đầu file, nếu thiếu → compiler error
+## Current keywords
 
-### 1. `genesis` - Creation Authority (REPLACE func/class/struct)
-**Mục đích:** Tạo thực thế, THAY THẾ hoàn toàn `func`, `class`, `struct`.
+### Control flow
 
-**Cú pháp:**
+`if`, `else`, `elif`, `while`, `for`, `break`, `continue`, `return`
+
+### Declarations and variables
+
+`func`, `class`, `struct`, `var`, `let`, `const`
+
+### Types
+
+`i32`, `i64`, `u32`, `u64`, `f32`, `f64`, `bool`, `string`, `char`, `void`
+
+### Logic
+
+`and`, `or`, `not`
+
+### Permission-based
+
+- `Primordial_Regalia`
+- `genesis`
+- `Incorporate`
+- `sanction` / `Sanction` lexer compatibility
+
+## Current syntax
+
+### File header
+
 ```veldanava
-Primordial_Regalia;  // BẮT BUỘC đầu file
-
-genesis func UltimateSkill(a, b):
-    return a + b;
-;
-
-genesis class TrueDragon:
-    // class body
-;
-
-genesis var WorldSeed = 42;
+Primordial_Regalia;
 ```
 
-**Behavior:** Không có `Primordial_Regalia` → compiler reject các statement này.
+### Genesis function
 
-### 2. `Incorporate` - Assimilation Authority
-**Mục đích:** Import modules/thư viện.
-
-**Cú pháp:**
 ```veldanava
-Incorporate "UltimateCore";
-Incorporate System.Manipulation;
-Incorporate math, io, network;
+Primordial_Regalia;
+
+genesis func main():
+    genesis print("hello");
+;
 ```
 
-### 3. `Sanction` - Decree Authority (BLOCK syntax)
-**Mục đích:** Whitelist toán tử cho toàn file (global).
+### Incorporate
 
-**Cú pháp block:**
 ```veldanava
-Sanction:
+Primordial_Regalia;
+
+genesis Incorporate "math", io;
+```
+
+### Sanction
+
+Flat syntax only:
+
+```veldanava
+Primordial_Regalia;
+
+sanction:
     plus;
-    minus;
-    multi;
-    div;
-    power;
-    root;
+    myfunc();
+    myclass();
 ;
 ```
 
-**Quan hệ với code hiện có:**
-- Compiler cấm dùng +, -, *, / nếu chưa Sanction
-- Syntax giống if/else block (indent-based)
+Rejected section syntax:
 
-### 4. `Primordial_Regalia` - Core Activation (BUILT-IN)
-**Mục đích:** Unlock God Mode, active Genesis/Incorporate/Sanction.
-
-**Cú pháp:**
 ```veldanava
-Primordial_Regalia;  // Ở đầu file/block chính
+sanction:
+    operators:
+        plus;
+    funcs:
+        myfunc();
+    oop:
+        myclass();
+;
 ```
 
-## Các bước triển khai
+Duplicate sanction names are rejected within the same shape. `plus;` and `plus();` are allowed because they are different shapes.
+
+## Implementation phases
 
 ### Phase 1: Cleanup
-- [ ] Remove `grant`, `manifest`, `import` khỏi keyword_table.h
-- [ ] Xóa Legacy TokenTypes
+
+Completed:
+
+- Removed old permission naming from active syntax decisions.
+- Current parser uses `Primordial_Regalia`, `genesis`, `Incorporate`, and `sanction`.
+
+Still open:
+
+- Remove stale legacy expectations from tests/docs where needed.
 
 ### Phase 2: Lexer
-- [ ] Thêm TokenTypes: `Primordial_Regalia`, `Genesis`, `Incorporate`, `Sanction`
-- [ ] Thêm operator identifiers: `Plus`, `Minus`, `Multi`, `Div`, `Power`, `Root`
-- [ ] Cập nhật keyword_table.h
+
+Completed:
+
+- `Primordial_Regalia`
+- `Genesis`
+- `Incorporate`
+- `Sanction`
+- lowercase `sanction` maps to `Sanction` for compatibility.
+- `elif` maps to `TokenType::Elif`; it is recognized but not implemented as a statement yet.
+- `and`, `or`, and `not` map to parser/codegen-supported logical tokens.
+
+Still open:
+
+- Dedicated operator tokens for `plus`, `minus`, `multi`, `div`, `power`, `root` are not required for the current flat parser design.
 
 ### Phase 3: AST
-- [ ] Thêm `GenesisDeclNode` (kind: func/class/var, name, body)
-- [ ] Thêm `IncorporateNode` (modules list)
-- [ ] Thêm `SanctionBlockNode` (operators list)
+
+Completed:
+
+- `GenesisDeclNode`
+- `IncorporateNode`
+- `SanctionBlockNode` with `operators`, `funcs`, `oop`
+
+Still open:
+
+- Better semantic model for flat sanction entries if backend enforcement is added.
+- Class/struct AST/codegen model.
 
 ### Phase 4: Parser
-- [ ] Check `Primordial_Regalia` ở đầu file
-- [ ] Thêm parse rule cho `genesis` (thay thế func/class/struct)
-- [ ] Thêm parse rule cho `Incorporate`
-- [ ] Thêm parse rule cho `Sanction` block
+
+Completed:
+
+- `Primordial_Regalia` must appear at file start.
+- Top-level God Mode declarations require `genesis`.
+- `sanction` accepts lowercase flat entries.
+- Sectioned `operators/funcs/oop` syntax is rejected.
+- Duplicate sanction names are rejected within the same shape.
+- `if (cond):` and `while (cond):` are rejected.
+
+Still open:
+
+- Semantic validation pass.
 
 ### Phase 5: Validation
-- [ ] Compiler reject Genesis/Incorporate/Sanction nếu thiếu Primordial_Regalia
-- [ ] Compiler reject dùng toán tử nếu chưa có Sanction
+
+Completed:
+
+- Parser rejects missing `Primordial_Regalia`.
+- Parser rejects top-level declarations without `genesis`.
+- Parser rejects sectioned sanction syntax.
+- Parser rejects duplicate sanction names.
+
+Still open:
+
+- Enforce sanctioned operators/calls in expressions.
+- Enforce `Incorporate` module availability.
+- Enforce ownership/borrowing rules.
+
+## Docs/tests follow-up
+
+- Public docs now describe lowercase flat `sanction`, same-shape duplicate rejection, and logical keywords.
+- Legacy tests have been migrated; `tests/*.veldanava` currently passes.
+- Add focused negative tests if a test runner for expected-failure cases is added.

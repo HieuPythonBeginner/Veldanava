@@ -1,5 +1,5 @@
 Primordial_Regalia;
 
-func main():
-    print("bad");
+genesis func main():
+    genesis print("bad without genesis is rejected");
 ;

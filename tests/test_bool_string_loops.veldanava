@@ -1,13 +1,19 @@
-let flag: bool = true;
-let name: string = "veldanava";
-let i: i32 = 0;
-while i < 3:
-    print(i);
-    let i: i32 = i + 1;
+Primordial_Regalia;
+
+sanction:
+    plus;
 ;
 
-for j in range(3):
-    print(j);
+genesis func main():
+    genesis let bool flag = true;
+    genesis let string name = "veldanava";
+    genesis let i32 i = 0;
+    genesis while i < 3:
+        genesis print(i);
+        genesis let i32 i = i + 1;
+    ;
+    genesis for j in range(3):
+        genesis print(j);
+    ;
+    genesis print(name);
 ;
-
-print(name);

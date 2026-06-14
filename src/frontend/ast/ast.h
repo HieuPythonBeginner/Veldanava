@@ -28,6 +28,8 @@ enum class NodeKind {
     SanctionBlock,
 };
 
+
+
 enum class BinaryOp {
     Add, Sub, Mul, Div, Mod,
     Lt, Gt, Le, Ge, Eq, Ne,
@@ -163,6 +165,8 @@ struct IncorporateNode : Node {
 
 struct SanctionBlockNode : Node {
     std::vector<std::string> operators;
+    std::vector<std::string> funcs;
+    std::vector<std::string> oop;
     SanctionBlockNode() : Node(NodeKind::SanctionBlock) {}
 };
 

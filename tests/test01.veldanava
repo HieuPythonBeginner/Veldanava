@@ -1,8 +1,15 @@
-for i in range(20):
-    print("Hello World");
+Primordial_Regalia;
+
+sanction:
+    plus;
 ;
-let n: i32 = 0;
-while n < 10:
-    print("Hello while loop");
-    let i32 n = n + 1;
+
+genesis func main():
+    genesis for i in range(20):
+        genesis print("Hello World");
+    ;
+    genesis let i32 n = 0;
+    genesis while n < 10:
+        genesis let i32 n = n + 1;
+    ;
 ;

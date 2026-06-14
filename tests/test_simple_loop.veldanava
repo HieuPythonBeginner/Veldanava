@@ -1,3 +1,7 @@
-for j in range(3):
-    print(j);
+Primordial_Regalia;
+
+genesis func main():
+    genesis for j in range(3):
+        genesis print(j);
+    ;
 ;

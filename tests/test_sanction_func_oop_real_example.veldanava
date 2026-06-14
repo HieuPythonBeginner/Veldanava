@@ -1,0 +1,13 @@
+Primordial_Regalia;
+
+sanction:
+    plus;
+    minus;
+    print();
+    myfunc();
+    MyClass();
+;
+
+genesis func main():
+    genesis print("Sanction lowercase parsed");
+;

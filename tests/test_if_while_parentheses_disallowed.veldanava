@@ -1,0 +1,7 @@
+Primordial_Regalia;
+
+genesis func main():
+    genesis if true:
+        genesis print(1);
+    ;
+;

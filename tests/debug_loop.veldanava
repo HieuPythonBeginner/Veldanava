@@ -1,52 +1,20 @@
-#include "frontend/parser/parser.h"
-#include "frontend/lexer/lexer.h"
-#include "backend/codegen/codegen.h"
-#include "backend/vm/vm.h"
-#include <iostream>
-#include <fstream>
-#include <sstream>
+Primordial_Regalia;
 
-using namespace std;
-
-int main(int argc, char** argv) {
-    string src = R"(
-print("for-loop Veldanava");
-print("------");
-print("for i in range(5)");
-print('    print("for-loop");');
-print(";");
-
-for i in range(5):
-    print("for-loop");
+sanction:
+    plus;
 ;
 
-print("while-loop Veldanava");
-print("------");
-print("let n: i32 = 0;");
-print("while n < 5:");
-print('    print("while-loop");');
-print("    let i32 n = n + 1;");
-print(";");
-
-let n: i32 = 0;
-while n < 5:
-    print("while-loop");
-    let i32 n = n + 1;
+genesis func main():
+    genesis print("for-loop Veldanava");
+    genesis print("------");
+    genesis for i in range(5):
+        genesis print("for-loop");
+    ;
+    genesis print("while-loop Veldanava");
+    genesis print("------");
+    genesis let i32 n = 0;
+    genesis while n < 5:
+        genesis print("while-loop");
+        genesis let i32 n = n + 1;
+    ;
 ;
-)";
-
-    try {
-        auto program = parser::parse_source(src);
-        codegen::CodeGenerator gen;
-        auto bytecode = gen.generate(program.get());
-        vm::VirtualMachine vm;
-        vm.set_strings(gen.get_string_pool());
-        vm.load(bytecode);
-        vm.run();
-        cout << "[OK]\n";
-        return 0;
-    } catch (const exception& e) {
-        cerr << "[ERROR] " << e.what() << "\n";
-        return 1;
-    }
-}

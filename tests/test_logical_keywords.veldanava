@@ -1,0 +1,15 @@
+Primordial_Regalia;
+
+genesis func main():
+    genesis let bool a = true;
+    genesis let bool b = false;
+    genesis if a and b:
+        genesis print(1);
+    ;
+    genesis if a or b:
+        genesis print(2);
+    ;
+    genesis if not b:
+        genesis print(3);
+    ;
+;

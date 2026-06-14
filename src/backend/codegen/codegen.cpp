@@ -3,8 +3,11 @@
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
 
 namespace codegen {
+
+static std::string required_module_for_function(const std::string& name);
 
 int CodeGenerator::add_string(const std::string& s) {
     auto it = string_indices_.find(s);
@@ -17,6 +20,16 @@ int CodeGenerator::add_string(const std::string& s) {
     return 1000 + idx;
 }
 
+void CodeGenerator::incorporate_module(const std::string& module) {
+    incorporated_modules_.insert(module);
+}
+
+bool CodeGenerator::is_module_function_available(const std::string& name) const {
+    std::string module = required_module_for_function(name);
+    if (module.empty()) return true;
+    return incorporated_modules_.find(module) != incorporated_modules_.end();
+}
+
 std::vector<vm::Instruction> CodeGenerator::generate(ast::ProgramNode* program) {
     instructions_.clear();
     next_reg_ = 0;
@@ -25,6 +38,7 @@ std::vector<vm::Instruction> CodeGenerator::generate(ast::ProgramNode* program) 
     continue_patches_.clear();
     string_pool_.clear();
     string_indices_.clear();
+    incorporated_modules_.clear();
 
     // Simple lexical scoping for variables.
     // scope_level 0 is the outermost scope.
@@ -69,6 +83,14 @@ static int lookup_var(const std::vector<std::unordered_map<std::string, int>>& s
     return -1;
 }
 
+static std::string required_module_for_function(const std::string& name) {
+    if (name == "sin" || name == "cos" || name == "tan" || name == "sqrt" ||
+        name == "abs" || name == "floor" || name == "ceil" || name == "pow") {
+        return "math";
+    }
+    return "";
+}
+
 int CodeGenerator::emit_condition_jump(ast::Node* condition) {
     if (condition->kind == ast::NodeKind::BinaryExpr) {
         auto* bin = static_cast<ast::BinaryExprNode*>(condition);
@@ -96,14 +118,19 @@ int CodeGenerator::emit_condition_jump(ast::Node* condition) {
             case ast::BinaryOp::Ne:  // false when left == right
                 emit(vm::Opcode::CMP, left_reg, right_reg, 0);
                 return emit_jmp(vm::Opcode::JEQ, 0);
-            default:
-                emit(vm::Opcode::CMP, left_reg, 0, 0);
+            default: {
+                int zero_reg = next_reg_++;
+                emit(vm::Opcode::IMM, zero_reg, 0, 0);
+                emit(vm::Opcode::CMP, left_reg, zero_reg, 0);
                 return emit_jmp(vm::Opcode::JEQ, 0);
+            }
         }
     }
 
     int reg = gen_expr(condition);
-    emit(vm::Opcode::CMP, reg, 0, 0);
+    int zero_reg = next_reg_++;
+    emit(vm::Opcode::IMM, zero_reg, 0, 0);
+    emit(vm::Opcode::CMP, reg, zero_reg, 0);
     return emit_jmp(vm::Opcode::JEQ, 0);
 }
 
@@ -280,6 +307,13 @@ void CodeGenerator::gen_stmt(ast::Node* node) {
             }
             break;
         }
+        case ast::NodeKind::IncorporateStmt: {
+            auto* inc = static_cast<ast::IncorporateNode*>(node);
+            for (const auto& module : inc->modules) {
+                incorporate_module(module);
+            }
+            break;
+        }
         case ast::NodeKind::IfStmt: {
             auto* ifstmt = static_cast<ast::IfStmtNode*>(node);
             int cond_jump_pos = emit_condition_jump(ifstmt->condition.get());
@@ -347,8 +381,68 @@ int CodeGenerator::gen_expr(ast::Node* node) {
                 case ast::BinaryOp::Mod:
                     instructions_.emplace_back(vm::Opcode::MOD, result_reg, left_reg, right_reg);
                     break;
+                case ast::BinaryOp::And: {
+                    int zero_reg = next_reg_++;
+                    emit(vm::Opcode::IMM, zero_reg, 0, 0);
+                    emit(vm::Opcode::CMP, left_reg, zero_reg, 0);
+                    int left_zero_jump = emit_jmp(vm::Opcode::JEQ, 0);
+                    emit(vm::Opcode::CMP, right_reg, zero_reg, 0);
+                    int right_zero_jump = emit_jmp(vm::Opcode::JEQ, 0);
+                    int true_pos = current_pos();
+                    emit(vm::Opcode::IMM, result_reg, 1, 0);
+                    int end_jump = emit_jmp(vm::Opcode::JMP, 0);
+                    int zero_pos = current_pos();
+                    emit(vm::Opcode::IMM, result_reg, 0, 0);
+                    int end_pos = current_pos();
+                    patch(left_zero_jump, zero_pos);
+                    patch(right_zero_jump, zero_pos);
+                    patch(end_jump, end_pos);
+                    break;
+                }
+                case ast::BinaryOp::Or: {
+                    int zero_reg = next_reg_++;
+                    emit(vm::Opcode::IMM, zero_reg, 0, 0);
+                    emit(vm::Opcode::CMP, left_reg, zero_reg, 0);
+                    int left_true_jump = emit_jmp(vm::Opcode::JNE, 0);
+                    emit(vm::Opcode::CMP, right_reg, zero_reg, 0);
+                    int right_true_jump = emit_jmp(vm::Opcode::JNE, 0);
+                    int false_pos = current_pos();
+                    emit(vm::Opcode::IMM, result_reg, 0, 0);
+                    int end_jump = emit_jmp(vm::Opcode::JMP, 0);
+                    int true_pos = current_pos();
+                    emit(vm::Opcode::IMM, result_reg, 1, 0);
+                    int end_pos = current_pos();
+                    patch(left_true_jump, true_pos);
+                    patch(right_true_jump, true_pos);
+                    patch(end_jump, end_pos);
+                    (void)false_pos;
+                    break;
+                }
                 default:
                     break;
+            }
+            return result_reg;
+        }
+        case ast::NodeKind::UnaryExpr: {
+            auto* unary = static_cast<ast::UnaryExprNode*>(node);
+            int operand_reg = gen_expr(unary->operand.get());
+            int result_reg = next_reg_++;
+            if (unary->op == ast::UnaryOp::Neg) {
+                int zero_reg = next_reg_++;
+                emit(vm::Opcode::IMM, zero_reg, 0, 0);
+                emit(vm::Opcode::SUB, result_reg, zero_reg, operand_reg);
+            } else {
+                int zero_reg = next_reg_++;
+                emit(vm::Opcode::IMM, zero_reg, 0, 0);
+                emit(vm::Opcode::CMP, operand_reg, zero_reg, 0);
+                int nonzero_jump = emit_jmp(vm::Opcode::JNE, 0);
+                emit(vm::Opcode::IMM, result_reg, 1, 0);
+                int end_jump = emit_jmp(vm::Opcode::JMP, 0);
+                int false_pos = current_pos();
+                emit(vm::Opcode::IMM, result_reg, 0, 0);
+                int end_pos = current_pos();
+                patch(nonzero_jump, false_pos);
+                patch(end_jump, end_pos);
             }
             return result_reg;
         }
@@ -363,6 +457,9 @@ int CodeGenerator::gen_expr(ast::Node* node) {
         }
         case ast::NodeKind::FuncCall: {
             auto* call = static_cast<ast::FuncCallNode*>(node);
+            if (!is_module_function_available(call->name)) {
+                throw std::runtime_error("Module function '" + call->name + "()' requires Incorporate '" + required_module_for_function(call->name) + "'");
+            }
             if (call->name == "range") {
                 int arg_reg = gen_expr(call->args[0].get());
                 int reg = next_reg_++;

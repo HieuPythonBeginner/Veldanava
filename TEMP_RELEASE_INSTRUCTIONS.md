@@ -1,30 +1,72 @@
-# Veldanava (Temporary build for download)
+# Veldanava Temporary Build Notes
 
-This archive is intended as a **temporary** snapshot so others can download and run the current state.
+This archive is a temporary snapshot of the current experimental Veldanava compiler state.
 
 ## Contents
-- `build/` (pre-built artifacts from this repo snapshot)
+
+- `build/` pre-built artifacts from this repo snapshot
 - `./build/veldanc` executable
-- source + tests + docs (for reference)
+- Source, tests, and docs for reference
 
-## How to run
-From the folder where you extracted the archive:
+## Current status
 
-```bash
-./build/veldanc tests/test_genesis_full.veldanava
-```
+Veldanava can build and run small programs, but it is not a complete compiler yet.
 
-Expected output:
-- Lines printing: `0`, `1`, `2`
-- Then: `[OK] Executed tests/test_genesis_full.veldanava`
+Known limitations:
 
-## If the executable fails
-Try rebuilding:
+- `sanction` enforces arithmetic operators and non-built-in calls; real backend policy can still be expanded.
+- `Incorporate` has minimal module tracking; known math functions require `genesis Incorporate "math";`.
+- `ownership::init()` is currently a no-op.
+- Class/struct support is incomplete.
+- Legacy tests have been migrated to current syntax.
+
+## Build
 
 ```bash
 cmake -B build -S .
 cmake --build build -j 4 --target veldanc
 ```
 
-Then re-run the command above.
+## Run smoke test
 
+From the extracted folder:
+
+```bash
+./build/veldanc tests/test_genesis_full.veldanava
+```
+
+Expected output:
+
+```text
+0
+1
+2
+[OK] Executed tests/test_genesis_full.veldanava
+```
+
+## Current sanctioned syntax
+
+```veldanava
+Primordial_Regalia;
+
+sanction:
+    plus;
+    myfunc();
+    myclass();
+;
+```
+
+Duplicate names are rejected within the same shape. `plus;` and `plus();` are allowed because they are different shapes.
+
+Sectioned sanction syntax is intentionally rejected:
+
+```veldanava
+sanction:
+    operators:
+        plus;
+    funcs:
+        myfunc();
+    oop:
+        myclass();
+;
+```

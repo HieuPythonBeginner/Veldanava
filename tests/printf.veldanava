@@ -1,7 +1,12 @@
-func main() -> i32:
-    let x: i32 = 1;
-    let y: i32 = 2;
-    let z: i32 = x + y;
-    print(z);
-    return 0;
+Primordial_Regalia;
+
+sanction:
+    plus;
+;
+
+genesis func main():
+    genesis let i32 x = 1;
+    genesis let i32 y = 2;
+    genesis let i32 z = x + y;
+    genesis print(z);
 ;

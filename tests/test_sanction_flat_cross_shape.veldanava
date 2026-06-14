@@ -1,0 +1,11 @@
+Primordial_Regalia;
+
+sanction:
+    plus;
+    plus();
+    print();
+;
+
+genesis func main():
+    genesis print("ok");
+;

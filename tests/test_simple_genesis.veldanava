@@ -1,5 +1,5 @@
 Primordial_Regalia;
 
 genesis func main():
-    print(1);
+    genesis print(1);
 ;

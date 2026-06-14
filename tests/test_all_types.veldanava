@@ -1,4 +1,8 @@
-print(42);
-print("hello");
-print(true);
-print(false);
+Primordial_Regalia;
+
+genesis func main():
+    genesis print(42);
+    genesis print("hello");
+    genesis print(true);
+    genesis print(false);
+;

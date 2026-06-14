@@ -1,5 +1,13 @@
-let i32 n = 0;
-while n < 3:
-    print(n);
-    let i32 n = n + 1;
+Primordial_Regalia;
+
+sanction:
+    plus;
+;
+
+genesis func main():
+    genesis let i32 n = 0;
+    genesis while n < 3:
+        genesis print(n);
+        genesis let i32 n = n + 1;
+    ;
 ;

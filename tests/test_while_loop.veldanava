@@ -1,6 +1,13 @@
-let i: i32 = 0;
-while i < 3:
-    print(i);
-    let tmp: i32 = 1;
-    let i: i32 = i + 1;
+Primordial_Regalia;
+
+sanction:
+    plus;
+;
+
+genesis func main():
+    genesis let i32 i = 0;
+    genesis while i < 3:
+        genesis let i32 tmp = 1;
+        genesis let i32 i = i + 1;
+    ;
 ;

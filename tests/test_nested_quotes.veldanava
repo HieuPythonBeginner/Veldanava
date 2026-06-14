@@ -1,3 +1,7 @@
-print('She said "Hello"');
-print("It's working");
-print("Mix 'single' and \"double\"");
+Primordial_Regalia;
+
+genesis func main():
+    genesis print("She said \"Hello\"");
+    genesis print("It's working");
+    genesis print("Mix 'single' and \"double\"");
+;

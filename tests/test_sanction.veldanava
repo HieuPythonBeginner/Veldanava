@@ -1,6 +1,6 @@
 Primordial_Regalia;
 
-Sanction:
+sanction:
     plus;
     minus;
     multi;
@@ -8,8 +8,8 @@ Sanction:
 ;
 
 genesis func main():
-    let i32 a = 1 + 2;
-    let i32 b = 3 - 1;
-    let i32 c = 2 * 3;
-    let i32 d = 6 / 2;
+    genesis let i32 a = 1 + 2;
+    genesis let i32 b = 3 - 1;
+    genesis let i32 c = 2 * 3;
+    genesis let i32 d = 6 / 2;
 ;

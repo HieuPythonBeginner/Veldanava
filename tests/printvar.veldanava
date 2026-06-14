@@ -1,3 +1,6 @@
-let x: i32 = 42;
-print(x);
+Primordial_Regalia;
+
+genesis func main():
+    genesis let i32 x = 42;
+    genesis print(x);
 ;

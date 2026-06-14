@@ -1,101 +1,274 @@
 # Veldanava Language Rules
 
 ## Philosophy
-Low-level/mid-level hybrid language. Systems programming + powerful scripting.
-- Block termination: indent-based only (no `{}`)
-- Block end: mandatory `;`
-- Statement termination: mandatory `;`
+
+Veldanava is a low-level/mid-level hybrid language with systems-programming roots and scripting-style syntax.
+
+Core syntax rules:
+
+- Indent-based blocks, similar to Python.
+- No `{}` block delimiters.
+- Every block ends with a mandatory `;`.
+- Every statement ends with a mandatory `;`.
+- Empty statement `;` is allowed at top level.
+
+## Required file header
+
+Every file must start with:
+
+```veldanava
+Primordial_Regalia;
+```
+
+Without this header, God Mode syntax is rejected.
 
 ## Keywords
 
-### Core Keywords
+### Core keywords
 
 | Category | Keywords |
-|----------|----------|
-| Control Flow | if, else, elif, while, for, break, continue, return |
-| Variables | let, const |
-| Types | i32, i64, u32, u64, f32, f64, bool, void, char, string |
+|---|---|
+| Control flow | `if`, `else`, `elif`, `while`, `for`, `break`, `continue`, `return` |
+| Variables | `let`, `const` |
+| Declarations | `func`, `class`, `struct`, `var` |
+| Types | `i32`, `i64`, `u32`, `u64`, `f32`, `f64`, `bool`, `void`, `char`, `string` |
+| Logic | `and`, `or`, `not` |
 
-### Permission-Based Keywords (God Mode)
+### Permission-based keywords
 
 | Keyword | Description |
-|---------|-------------|
-| `Primordial_Regalia` | Bắt buộc ở đầu file để kích hoạt God Mode. Cho phép sử dụng genesis, Incorporate, Sanction. |
-| `genesis` | Tạo thực thể (thay thế func/class/struct/var). Yêu cầu Primordial_Regalia. |
-| `Incorporate` | Import modules/thư viện. Yêu cầu Primordial_Regalia. |
-| `Sanction` | Khối khai báo operator toàn file (hiện parser chỉ thu thập danh sách; enforcement có thể chưa đầy đủ ở backend). Yêu cầu Primordial_Regalia. |
+|---|---|
+| `Primordial_Regalia` | Required at the start of the file. Enables God Mode syntax. |
+| `genesis` | Prefix for God Mode declarations/statements. |
+| `Incorporate` | Import/module declaration. Parsed only for now. |
+| `sanction` | Flat global whitelist block. Parsed only for now. |
 
-## Indent-based Syntax (Python-style)
+`Sanction` uppercase is accepted by the lexer for compatibility, but the documented keyword is lowercase `sanction`.
 
-### Standard Syntax
-```veldanava
-let i32 x = 42;
-return x;
+## God Mode syntax
 
-if x > 0:
-    let i32 y = 1;
-;
-
-while true:
-    let i32 a = 1;
-    break;
-;
-
-for i in range(10):
-    let i32 b = i;
-;
-```
-
-- Variable declaration: `let <type> <name> = <value>;` (type-first syntax)
-- For iterator: type inferred from range call
-- All blocks end with mandatory `;`
-
-### Genesis Syntax (God Mode)
+### Function
 
 ```veldanava
 Primordial_Regalia;
 
 genesis func main():
-    genesis let i32 n = 0;
-    genesis while n < 3:
-        genesis print(n);
-        genesis let i32 n = n + 1;
+    genesis print("hello");
+;
+```
+
+### Variable
+
+```veldanava
+Primordial_Regalia;
+
+genesis func main():
+    genesis let i32 x = 42;
+;
+```
+
+### Class / struct
+
+```veldanava
+Primordial_Regalia;
+
+genesis class MyDragon:
+;
+
+genesis struct MyData:
+;
+```
+
+Class and struct declarations are parsed, but backend support is incomplete.
+
+### Incorporate
+
+```veldanava
+Primordial_Regalia;
+
+genesis Incorporate "math", io;
+```
+
+`Incorporate` accepts string literals or bare identifiers. The backend tracks incorporated modules and rejects known module functions unless their module is incorporated.
+
+Known module functions currently include math functions such as `sqrt`, `sin`, `cos`, `tan`, `abs`, `floor`, `ceil`, and `pow`; they require:
+
+```veldanava
+genesis Incorporate "math";
+```
+
+## Sanction syntax
+
+`sanction` uses flat entries only:
+
+```veldanava
+Primordial_Regalia;
+
+sanction:
+    plus;
+    myfunc();
+    myclass();
+;
+```
+
+Entry rules:
+
+| Entry shape | Meaning |
+|---|---|
+| `Ident;` | Operator-style entry, for example `plus;` |
+| `Ident();` | Callable/class-style entry, for example `myfunc();` or `myclass();` |
+
+Duplicate names are rejected within the same entry shape. `plus;` and `plus();` are allowed because they are different shapes. These are invalid:
+
+```veldanava
+sanction:
+    plus;
+    plus;
+;
+```
+
+```veldanava
+sanction:
+    myfunc();
+    myfunc();
+;
+```
+
+Section syntax is rejected. Do not write:
+
+```veldanava
+sanction:
+    operators:
+        plus;
+    funcs:
+        myfunc();
+    oop:
+        myclass();
+;
+```
+
+The parser rejects it with:
+
+```text
+Sanction block does not support operators/funcs/oop sections; use flat entries only
+```
+
+Current status: `sanction` is collected into `SanctionBlockNode` and semantic validation enforces arithmetic operators plus non-built-in calls.
+
+## Control flow
+
+### If
+
+```veldanava
+if x > 0:
+    genesis print("positive");
+;
+```
+
+Parentheses are not allowed:
+
+```veldanava
+if (x > 0):
+    genesis print("invalid");
+;
+```
+
+### While
+
+```veldanava
+while x < 10:
+    genesis print(x);
+;
+```
+
+Parentheses are not allowed:
+
+```veldanava
+while (x < 10):
+    genesis print(x);
+;
+```
+
+### For
+
+```veldanava
+for i in range(10):
+    genesis print(i);
+;
+```
+
+## Statement rules
+
+- All statements end with `;`.
+- Expression statements use `expr;`.
+- Empty statements use `;`.
+- `if` / `while` conditions must not use parentheses.
+- Inside `genesis` blocks, statements normally require the `genesis` prefix.
+
+Example:
+
+```veldanava
+Primordial_Regalia;
+
+genesis func main():
+    genesis if true:
+        genesis print("ok");
     ;
 ;
+```
 
-genesis func add(a, b):
-    return a + b;
+## Logical expressions
+
+Logical keywords are lowercase:
+
+```veldanava
+if a and b:
+    genesis print("both");
 ;
 
-Incorporate "math", io;
+if a or b:
+    genesis print("either");
+;
 
-Sanction:
-    plus;
-    minus;
-    multi;
-    div;
+if not b:
+    genesis print("not b");
 ;
 ```
 
-- `Primordial_Regalia;` bắt buộc ở đầu file
-- **Declarations trong genesis scope cần `genesis` prefix** (let, func, class, struct)
-- Control flow (if/while/for) và function calls/function declarations không cần genesis prefix
-- `Incorporate` import modules (string identifier hoặc bare identifier)
-- `Sanction` block whitelist toán tử số học (plus, minus, multi, div, power, root)
+`elif` is recognized by the lexer but not implemented as a statement yet; use nested `else` + `if`.
 
-## Built-in Functions
-- `range(n)` — tạo iterator từ 0 đến n-1
-- `print(val)` — in giá trị ra stdout
+## Built-in functions
 
-## Statement Rules
-- All statements end with `;` (required)
-- Expression statements: `expr;`
-- Empty statement: `;`
-- Optional `()` for conditions in if/while
+- `print(value)` prints a value to stdout.
+- `range(n)` creates an integer iterator from `0` to `n - 1`.
 
-## Build & Run
+## Build and run
 
 ```bash
-cmake -B build && cmake --build build
-./build/veldanc
+cmake -B build -S .
+cmake --build build --target veldanc
+./build/veldanc <file.veldanava>
 ```
+
+Smoke test:
+
+```bash
+./build/veldanc tests/test_genesis_full.veldanava
+```
+
+Expected output:
+
+```text
+0
+1
+2
+[OK] Executed tests/test_genesis_full.veldanava
+```
+
+## Current limitations
+
+- `sanction` enforces arithmetic operators and non-built-in calls; real backend policy can still be expanded.
+- `Incorporate` has minimal module tracking; known math functions require `genesis Incorporate "math";`.
+- `ownership::init()` is currently a no-op.
+- Class/struct codegen is incomplete.
+- Legacy tests have been migrated to current syntax.

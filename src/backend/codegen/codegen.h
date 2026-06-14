@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace codegen {
 
@@ -32,9 +33,12 @@ private:
     std::vector<int> continue_patches_;
     std::vector<std::string> string_pool_;
     std::unordered_map<std::string, int> string_indices_;
+    std::unordered_set<std::string> incorporated_modules_;
 
 
     int add_string(const std::string& s);
+    void incorporate_module(const std::string& module);
+    bool is_module_function_available(const std::string& name) const;
 
     void gen_stmt(ast::Node* node);
     int gen_expr(ast::Node* node);

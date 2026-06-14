@@ -8,7 +8,7 @@ inline std::unordered_map<std::string, TokenType> get_keywords() {
     return {
         {"if", TokenType::If},
         {"else", TokenType::Else},
-        {"elif", TokenType::If},
+        {"elif", TokenType::Elif},
         {"while", TokenType::While},
         {"for", TokenType::For},
         {"in", TokenType::In},
@@ -23,7 +23,8 @@ inline std::unordered_map<std::string, TokenType> get_keywords() {
         {"struct", TokenType::Struct},
         {"genesis", TokenType::Genesis},
         {"Incorporate", TokenType::Incorporate},
-        {"Sanction", TokenType::Sanction},
+{"Sanction", TokenType::Sanction},
+        {"sanction", TokenType::Sanction},
         {"Primordial_Regalia", TokenType::Primordial_Regalia},
         {"i32", TokenType::I32},
         {"i64", TokenType::I64},
@@ -37,9 +38,9 @@ inline std::unordered_map<std::string, TokenType> get_keywords() {
         {"string", TokenType::String},
         {"char", TokenType::Char},
         {"void", TokenType::Void},
-        {"and", TokenType::AndKw},
-        {"or", TokenType::OrKw},
-        {"not", TokenType::NotKw},
+        {"and", TokenType::And},
+        {"or", TokenType::Or},
+        {"not", TokenType::Not},
     };
 }
 
