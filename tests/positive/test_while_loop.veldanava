@@ -1,13 +1,13 @@
 Primordial_Regalia;
 
-sanction:
+Sanction:
     plus;
 ;
 
 genesis func main():
     genesis let i32 i = 0;
     genesis while i < 3:
-        genesis print("hello");
+        genesis let i32 tmp = 1;
         genesis let i32 i = i + 1;
     ;
 ;

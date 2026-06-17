@@ -14,7 +14,7 @@ Veldanava can build and run small programs, but it is not a complete compiler ye
 
 Known limitations:
 
-- `sanction` enforces arithmetic operators and non-built-in calls; real backend policy can still be expanded.
+- `Sanction` enforces arithmetic operators and non-built-in calls; real backend policy can still be expanded.
 - `Incorporate` has minimal module tracking; known math functions require `genesis Incorporate "math";`.
 - `ownership::init()` is currently a no-op.
 - Class/struct support is incomplete.
@@ -49,7 +49,7 @@ Expected output:
 ```veldanava
 Primordial_Regalia;
 
-sanction:
+Sanction:
     plus;
     myfunc();
     myclass();
@@ -61,7 +61,7 @@ Duplicate names are rejected within the same shape. `plus;` and `plus();` are al
 Sectioned sanction syntax is intentionally rejected:
 
 ```veldanava
-sanction:
+Sanction:
     operators:
         plus;
     funcs:

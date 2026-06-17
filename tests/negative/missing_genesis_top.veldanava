@@ -1,0 +1,5 @@
+Primordial_Regalia;
+
+func main():
+    genesis print("no genesis prefix");
+;

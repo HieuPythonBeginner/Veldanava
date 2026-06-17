@@ -1,6 +1,6 @@
 Primordial_Regalia;
 
-genesis Incorporate "math", io;
+Incorporate "math", io;
 
 genesis func main():
     genesis print("Incorporate test passed");

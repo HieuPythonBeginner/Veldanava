@@ -1,0 +1,8 @@
+Primordial_Regalia;
+
+genesis func main():
+    genesis let i32 x = 1;
+    genesis if (x > 0):
+        genesis print("positive");
+    ;
+;

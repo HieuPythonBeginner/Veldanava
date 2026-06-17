@@ -2,18 +2,18 @@
 
 ## Completed
 
-- Parser accepts lowercase `sanction`.
-- Parser accepts flat `sanction` entries:
+- Parser accepts uppercase `Sanction`.
+- Parser accepts flat `Sanction` entries:
   ```veldanava
-  sanction:
+  Sanction:
       plus;
       myfunc();
       myclass();
   ;
   ```
-- Parser rejects sectioned `sanction` syntax:
+- Parser rejects sectioned `Sanction` syntax:
   ```veldanava
-  sanction:
+  Sanction:
       operators:
           plus;
       funcs:
@@ -33,12 +33,12 @@
 ## Remaining
 
 - Migrate legacy tests to current syntax.
-- Semantic validation enforces `sanction` for arithmetic operators and non-built-in calls.
+- Semantic validation enforces `Sanction` for arithmetic operators and non-built-in calls.
 - `Incorporate` has minimal module tracking; known math functions require `genesis Incorporate "math";`.
 - Finish ownership/semantic pass; `ownership::init()` is currently a no-op.
 - Improve class/struct AST and codegen support.
 - Add focused tests for:
-  - lowercase `sanction`
+  - `Sanction` uppercase only
   - flat sanction entries
   - duplicate sanction rejection
   - sectioned sanction rejection

@@ -39,8 +39,16 @@ void Parser::check_permission(const std::string& feature) {
     }
 }
 
+static bool is_type_token(const lexer::Token& tok) {
+    return tok.type == lexer::TokenType::I32 || tok.type == lexer::TokenType::I64 ||
+           tok.type == lexer::TokenType::U32 || tok.type == lexer::TokenType::U64 ||
+           tok.type == lexer::TokenType::F32 || tok.type == lexer::TokenType::F64 ||
+           tok.type == lexer::TokenType::Bool || tok.type == lexer::TokenType::String ||
+           tok.type == lexer::TokenType::Char || tok.type == lexer::TokenType::Void;
+}
+
 static bool is_sanction_keyword(const lexer::Token& tok) {
-    return tok.type == lexer::TokenType::Sanction || (tok.type == lexer::TokenType::Ident && tok.lexeme == "sanction");
+    return tok.type == lexer::TokenType::Sanction;
 }
 
 std::unique_ptr<ast::ProgramNode> Parser::parse() {
@@ -61,10 +69,9 @@ std::unique_ptr<ast::ProgramNode> Parser::parse() {
         }
 
         // Top-level can be:
-        // - Sanction block: `Sanction:` or `sanction:` (lowercase)
+        // - Sanction block: `Sanction:`
         // - genesis <declaration>
         if (is_sanction_keyword(peek())) {
-            // Consume whichever token it is (Sanction or Ident)
             if (match(lexer::TokenType::Sanction)) {
                 auto san = parse_sanction();
                 if (san) program->statements.push_back(std::move(san));
@@ -75,7 +82,13 @@ std::unique_ptr<ast::ProgramNode> Parser::parse() {
                 if (san) program->statements.push_back(std::move(san));
                 continue;
             }
-            throw std::runtime_error("Internal error: failed to consume sanction keyword");
+            throw std::runtime_error("Internal error: failed to consume Sanction keyword");
+        }
+
+        if (match(lexer::TokenType::Incorporate)) {
+            auto inc = parse_incorporate();
+            if (inc) program->statements.push_back(std::move(inc));
+            continue;
         }
 
         if (!check(lexer::TokenType::Genesis)) {
@@ -105,10 +118,7 @@ std::unique_ptr<ast::Node> Parser::genesis_declaration() {
                 if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected param name");
                 std::string name = advance().lexeme;
                 if (!match(lexer::TokenType::Colon)) throw std::runtime_error("Expected ':'");
-                if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
-                    check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
-                    check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Char) ||
-                    check(lexer::TokenType::Void)) {
+                if (is_type_token(peek())) {
                     std::string type = advance().lexeme;
                     func->params.push_back({name, type});
                 } else {
@@ -177,10 +187,7 @@ std::unique_ptr<ast::Node> Parser::genesis_declaration() {
         func->kind = "var";
         if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected variable name after genesis var");
         func->name = advance().lexeme;
-        if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
-            check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
-            check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Char) ||
-            check(lexer::TokenType::Void)) {
+        if (is_type_token(peek())) {
             func->return_type = advance().lexeme;
         }
         if (match(lexer::TokenType::Assign)) {
@@ -214,13 +221,13 @@ std::unique_ptr<ast::Node> Parser::parse_incorporate() {
 }
 
 std::unique_ptr<ast::Node> Parser::parse_sanction() {
-    check_permission("sanction");
+    check_permission("Sanction");
     auto san = std::make_unique<ast::SanctionBlockNode>();
 
     if (!match(lexer::TokenType::Colon)) {
         if (match(lexer::TokenType::Sanction)) {
             if (!match(lexer::TokenType::Colon)) {
-                throw std::runtime_error("Expected ':' after sanction keyword");
+                throw std::runtime_error("Expected ':' after Sanction keyword");
             }
         } else {
             throw std::runtime_error("Expected ':' after sanction keyword");
@@ -237,7 +244,7 @@ std::unique_ptr<ast::Node> Parser::parse_sanction() {
         const auto& existing_names = is_call ? func_names : operator_names;
         for (const auto& existing : existing_names) {
             if (existing == name) {
-                throw std::runtime_error("Duplicate sanction entry: '" + name + "'");
+                throw std::runtime_error("Duplicate Sanction entry: '" + name + "'");
             }
         }
         if (is_call) {
@@ -250,7 +257,7 @@ std::unique_ptr<ast::Node> Parser::parse_sanction() {
     auto parse_flat_entries = [&]() {
         while (!check(lexer::TokenType::Dedent) && !check(lexer::TokenType::Semi) && !check(lexer::TokenType::Eof)) {
             if (!check(lexer::TokenType::Ident)) {
-                throw std::runtime_error("Expected sanction entry (operator or call)");
+                throw std::runtime_error("Expected Sanction entry (operator or call)");
             }
             if (pos_ + 1 < tokens_.size() && tokens_[pos_ + 1].type == lexer::TokenType::Colon) {
                 throw std::runtime_error("Sanction block does not support operators/funcs/oop sections; use flat entries only");
@@ -259,7 +266,7 @@ std::unique_ptr<ast::Node> Parser::parse_sanction() {
             std::string name = advance().lexeme;
             if (match(lexer::TokenType::LParen)) {
                 if (!match(lexer::TokenType::RParen)) {
-                    throw std::runtime_error("Expected ')' in sanction entry");
+                    throw std::runtime_error("Expected ')' in Sanction entry");
                 }
                 add_unique_sanction_entry(name, true);
                 san->funcs.push_back(name);
@@ -268,7 +275,7 @@ std::unique_ptr<ast::Node> Parser::parse_sanction() {
                 san->operators.push_back(name);
             }
             if (!match(lexer::TokenType::Semi)) {
-                throw std::runtime_error("Expected ';' after sanction entry");
+                throw std::runtime_error("Expected ';' after Sanction entry");
             }
         }
     };
@@ -285,18 +292,11 @@ std::unique_ptr<ast::Node> Parser::genesis_statement() {
     if (match(lexer::TokenType::Sanction)) {
         return parse_sanction();
     }
-    if (check(lexer::TokenType::Ident) && peek().lexeme == "sanction") {
-        advance();
-        return parse_sanction();
-    }
 
     if (match(lexer::TokenType::Let) || match(lexer::TokenType::Const)) {
 
         auto decl = std::make_unique<ast::VarDeclNode>();
-        if (check(lexer::TokenType::I32) || check(lexer::TokenType::I64) || check(lexer::TokenType::U32) ||
-            check(lexer::TokenType::U64) || check(lexer::TokenType::F32) || check(lexer::TokenType::F64) ||
-            check(lexer::TokenType::Bool) || check(lexer::TokenType::String) || check(lexer::TokenType::Char) ||
-            check(lexer::TokenType::Void)) {
+        if (is_type_token(peek())) {
             decl->type = advance().lexeme;
             if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected identifier after type");
             decl->name = advance().lexeme;
@@ -320,6 +320,18 @@ std::unique_ptr<ast::Node> Parser::genesis_statement() {
         if (!check(lexer::TokenType::Indent)) throw std::runtime_error("Expected indent after ':'");
         advance();
         ifstmt->then_block = genesis_block_body();
+
+        // Handle elif chain - elif appears after dedent/semicolon at same indentation
+        while (check(lexer::TokenType::Elif)) {
+            advance();
+            auto elif_cond = expression();
+            if (!match(lexer::TokenType::Colon)) throw std::runtime_error("Expected ':' after elif condition");
+            if (!check(lexer::TokenType::Indent)) throw std::runtime_error("Expected indent after ':'");
+            advance();
+            auto elif_body = genesis_block_body();
+            ifstmt->elif_chain.push_back({std::move(elif_cond), std::move(elif_body)});
+        }
+
         if (match(lexer::TokenType::Else)) {
             if (!match(lexer::TokenType::Colon)) throw std::runtime_error("Expected ':'");
             if (!check(lexer::TokenType::Indent)) throw std::runtime_error("Expected indent after ':'");
@@ -327,10 +339,6 @@ std::unique_ptr<ast::Node> Parser::genesis_statement() {
             ifstmt->else_block = genesis_block_body();
         }
         return ifstmt;
-    }
-
-    if (match(lexer::TokenType::Elif)) {
-        throw std::runtime_error("elif is not implemented; use else with nested if");
     }
 
     if (match(lexer::TokenType::While)) {
@@ -416,7 +424,7 @@ std::unique_ptr<ast::Node> Parser::genesis_block_body() {
     while (!check(lexer::TokenType::Dedent) && !check(lexer::TokenType::Eof)) {
         // In genesis scope, statements normally require `genesis` prefix.
         // Allow nested Sanction blocks without requiring the extra `genesis` keyword.
-        if (check(lexer::TokenType::Sanction) || (check(lexer::TokenType::Ident) && peek().lexeme == "sanction")) {
+        if (check(lexer::TokenType::Sanction)) {
             auto stmt = genesis_statement();
             if (stmt) block->statements.push_back(std::move(stmt));
             continue;
@@ -432,10 +440,13 @@ std::unique_ptr<ast::Node> Parser::genesis_block_body() {
     while (check(lexer::TokenType::Dedent)) {
         match(lexer::TokenType::Dedent);
     }
-    if (!check(lexer::TokenType::Semi)) {
-        throw std::runtime_error("Expected ';' after dedent to close block");
+    if (check(lexer::TokenType::Semi)) {
+        match(lexer::TokenType::Semi);
+    } else if (check(lexer::TokenType::Elif) || check(lexer::TokenType::Else)) {
+        // Block body continues with elif/else, no semicolon needed here
+    } else if (!check(lexer::TokenType::Eof)) {
+        throw std::runtime_error("Expected ';' after block body");
     }
-    match(lexer::TokenType::Semi);
     return block;
 }
 
@@ -598,6 +609,9 @@ static void collect_sanctions(ast::Node* node, SanctionContext& ctx) {
         case ast::NodeKind::IfStmt: {
             auto* stmt = static_cast<ast::IfStmtNode*>(node);
             collect_sanctions(stmt->then_block.get(), ctx);
+            for (auto& [cond, body] : stmt->elif_chain) {
+                collect_sanctions(body.get(), ctx);
+            }
             collect_sanctions(stmt->else_block.get(), ctx);
             break;
         }
@@ -624,7 +638,7 @@ static void validate_expression(ast::Node* node, const SanctionContext& ctx) {
             validate_expression(expr->right.get(), ctx);
             std::string sanction = operator_sanction_name(expr->op);
             if (!sanction.empty() && ctx.operators.find(sanction) == ctx.operators.end()) {
-                throw std::runtime_error("Sanction denied: operator '" + sanction + "' requires '" + sanction + ";' in sanction block");
+                throw std::runtime_error("Sanction denied: operator '" + sanction + "' requires '" + sanction + ";' in Sanction block");
             }
             break;
         }
@@ -634,7 +648,7 @@ static void validate_expression(ast::Node* node, const SanctionContext& ctx) {
         case ast::NodeKind::FuncCall: {
             auto* call = static_cast<ast::FuncCallNode*>(node);
             if (!is_builtin_function(call->name) && ctx.funcs.find(call->name) == ctx.funcs.end()) {
-                throw std::runtime_error("Sanction denied: call '" + call->name + "()' requires '" + call->name + "();' in sanction block");
+                throw std::runtime_error("Sanction denied: call '" + call->name + "()' requires '" + call->name + "();' in Sanction block");
             }
             for (auto& arg : call->args) validate_expression(arg.get(), ctx);
             break;
@@ -667,6 +681,10 @@ static void validate_statement(ast::Node* node, const SanctionContext& ctx) {
             auto* stmt = static_cast<ast::IfStmtNode*>(node);
             validate_expression(stmt->condition.get(), ctx);
             validate_statement(stmt->then_block.get(), ctx);
+            for (auto& [cond, body] : stmt->elif_chain) {
+                validate_expression(cond.get(), ctx);
+                validate_statement(body.get(), ctx);
+            }
             validate_statement(stmt->else_block.get(), ctx);
             break;
         }

@@ -9,7 +9,9 @@ add_executable(veldanc
     src/main.cpp
     src/frontend/lexer/lexer.cpp
     src/frontend/parser/parser.cpp
+    src/frontend/module/module_loader.cpp
     src/middle/ownership/ownership.cpp
+    src/middle/typechecker/typechecker.cpp
     src/backend/codegen/codegen.cpp
     src/backend/vm/vm.cpp
 )

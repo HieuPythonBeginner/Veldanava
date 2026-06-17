@@ -1,0 +1,5 @@
+Primordial_Regalia;
+
+genesis func main():
+    genesis let i32 x = 1 + 2;
+;

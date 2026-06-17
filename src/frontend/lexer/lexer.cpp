@@ -109,8 +109,8 @@ public:
             case ':': col_++; pos_++; return Token(TokenType::Colon, ":");
             case '.': col_++; pos_++; return Token(TokenType::Dot, ".");
             case '-': return scan_arrow();
-            case '"': return scan_string();
-            case '\'': return scan_char();
+            case '"': return scan_string('"');
+            case '\'': return scan_string('\'');
             default:
                 col_++; pos_++;
                 return Token(TokenType::Error, std::string(1, c));
@@ -197,26 +197,16 @@ private:
         return Token(TokenType::Sub, "-");
     }
 
-    Token scan_string() {
+    Token scan_string(char quote) {
         pos_++; col_++;
         size_t start = pos_;
-        while (pos_ < src_.size() && src_[pos_] != '"') {
+        while (pos_ < src_.size() && src_[pos_] != quote) {
             if (src_[pos_] == '\\') pos_++;
             pos_++; col_++;
         }
         std::string val = src_.substr(start, pos_ - start);
         if (pos_ < src_.size()) { pos_++; col_++; }
         return Token(TokenType::StringLit, val, line_, col_);
-    }
-
-    Token scan_char() {
-        pos_++; col_++;
-        size_t start = pos_;
-        if (src_[pos_] == '\\') pos_++;
-        if (pos_ < src_.size()) pos_++;
-        std::string val = src_.substr(start, pos_ - start);
-        if (pos_ < src_.size() && src_[pos_] == '\'') { pos_++; col_++; }
-        return Token(TokenType::CharLit, val, line_, col_);
     }
 };
 

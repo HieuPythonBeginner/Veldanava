@@ -1,22 +1,29 @@
 # Plan: Permission-based Keywords System
 
-## Current status
+## Current status (2026-06-16)
 
-Implemented subset:
+- Git working tree clean, latest commit: `0a96345 feat: enforce sanctions and migrate syntax tests`
+- All 29 tests pass: `SUMMARY total=29 pass=29 fail=0`
+
+### Implemented
 
 - `Primordial_Regalia;` is required at file start.
 - `genesis` is used as the God Mode declaration/statement prefix.
 - `Incorporate` is parsed as a God Mode statement.
-- `sanction` is parsed as a lowercase flat whitelist block and enforced by semantic validation for arithmetic operators and non-built-in calls.
+- `Sanction` is parsed as an uppercase flat whitelist block and enforced by semantic validation for arithmetic operators and non-built-in calls.
 - `if (cond):` and `while (cond):` are rejected.
+- Logical keywords `and`, `or`, `not` are implemented.
+- Backend has minimal module tracking for `Incorporate`.
+- Math functions check requirement but no real semantics implemented.
 
-Not implemented yet:
+### Not implemented yet
 
-- Backend enforcement for `sanction` can still be expanded beyond current operator/call validation.
-- Minimal module tracking for `Incorporate`; known math functions require `genesis Incorporate "math";`.
+- Backend enforcement for `Sanction` can still be expanded beyond current operator/call validation.
+- Module loading for `Incorporate` - no real file/module reading.
 - Ownership/semantic pass; `ownership::init()` is currently a no-op.
 - Full class/struct backend support.
-- Legacy tests have been migrated to current syntax.
+- `elif` is recognized by lexer but not implemented as a statement.
+- Function call backend is incomplete (no function table, ABI, return semantics).
 
 ## Current keywords
 
@@ -41,7 +48,7 @@ Not implemented yet:
 - `Primordial_Regalia`
 - `genesis`
 - `Incorporate`
-- `sanction` / `Sanction` lexer compatibility
+- `Sanction` uppercase is the only accepted form.
 
 ## Current syntax
 
@@ -61,6 +68,14 @@ genesis func main():
 ;
 ```
 
+### Variable declaration
+
+```veldanava
+genesis let i32 x = 42;
+genesis let bool flag = true;
+genesis let string name = "veldanava";
+```
+
 ### Incorporate
 
 ```veldanava
@@ -76,7 +91,7 @@ Flat syntax only:
 ```veldanava
 Primordial_Regalia;
 
-sanction:
+Sanction:
     plus;
     myfunc();
     myclass();
@@ -86,7 +101,7 @@ sanction:
 Rejected section syntax:
 
 ```veldanava
-sanction:
+Sanction:
     operators:
         plus;
     funcs:
@@ -96,7 +111,43 @@ sanction:
 ;
 ```
 
-Duplicate sanction names are rejected within the same shape. `plus;` and `plus();` are allowed because they are different shapes.
+Entry rules:
+
+- `Ident;` = operator-style sanction.
+- `Ident();` = callable/class-style sanction.
+
+Duplicate rejection (same shape only):
+
+- `plus;` + `plus();` allowed (different shapes).
+- `plus;` + `plus;` error.
+- `myfunc();` + `myfunc();` error.
+
+### Logical keywords
+
+```veldanava
+if a and b:
+if a or b:
+if not b:
+```
+
+### If/While (no parentheses)
+
+```veldanava
+if x > 0:
+    genesis print("positive");
+;
+
+while x < 3:
+    genesis print(x);
+;
+```
+
+Wrong:
+
+```veldanava
+if (x > 0):
+;
+```
 
 ## Implementation phases
 
@@ -105,11 +156,7 @@ Duplicate sanction names are rejected within the same shape. `plus;` and `plus()
 Completed:
 
 - Removed old permission naming from active syntax decisions.
-- Current parser uses `Primordial_Regalia`, `genesis`, `Incorporate`, and `sanction`.
-
-Still open:
-
-- Remove stale legacy expectations from tests/docs where needed.
+- Current parser uses `Primordial_Regalia`, `genesis`, `Incorporate`, and `Sanction`.
 
 ### Phase 2: Lexer
 
@@ -118,14 +165,9 @@ Completed:
 - `Primordial_Regalia`
 - `Genesis`
 - `Incorporate`
-- `Sanction`
-- lowercase `sanction` maps to `Sanction` for compatibility.
+- `Sanction` is uppercase only.
 - `elif` maps to `TokenType::Elif`; it is recognized but not implemented as a statement yet.
 - `and`, `or`, and `not` map to parser/codegen-supported logical tokens.
-
-Still open:
-
-- Dedicated operator tokens for `plus`, `minus`, `multi`, `div`, `power`, `root` are not required for the current flat parser design.
 
 ### Phase 3: AST
 
@@ -133,12 +175,7 @@ Completed:
 
 - `GenesisDeclNode`
 - `IncorporateNode`
-- `SanctionBlockNode` with `operators`, `funcs`, `oop`
-
-Still open:
-
-- Better semantic model for flat sanction entries if backend enforcement is added.
-- Class/struct AST/codegen model.
+- `SanctionBlockNode`
 
 ### Phase 4: Parser
 
@@ -146,32 +183,29 @@ Completed:
 
 - `Primordial_Regalia` must appear at file start.
 - Top-level God Mode declarations require `genesis`.
-- `sanction` accepts lowercase flat entries.
+- `Sanction` accepts uppercase flat entries only.
 - Sectioned `operators/funcs/oop` syntax is rejected.
 - Duplicate sanction names are rejected within the same shape.
 - `if (cond):` and `while (cond):` are rejected.
 
-Still open:
+Completed in validation:
 
-- Semantic validation pass.
-
-### Phase 5: Validation
-
-Completed:
-
-- Parser rejects missing `Primordial_Regalia`.
-- Parser rejects top-level declarations without `genesis`.
-- Parser rejects sectioned sanction syntax.
-- Parser rejects duplicate sanction names.
+- `validate_sanctions(ast::ProgramNode*)` enforces operator/call sanctions.
+- Built-in `print()` and `range()` are exempt from sanction requirement.
 
 Still open:
 
-- Enforce sanctioned operators/calls in expressions.
-- Enforce `Incorporate` module availability.
-- Enforce ownership/borrowing rules.
+- Semantic validation pass beyond sanctions.
+- Real module loading for `Incorporate`.
+- Ownership/borrowing checks.
 
-## Docs/tests follow-up
+## Next priorities
 
-- Public docs now describe lowercase flat `sanction`, same-shape duplicate rejection, and logical keywords.
-- Legacy tests have been migrated; `tests/*.veldanava` currently passes.
-- Add focused negative tests if a test runner for expected-failure cases is added.
+1. Tách test runner positive/negative.
+2. Implement `elif`.
+3. Implement ownership/semantic pass.
+4. Cải thiện class/struct backend.
+5. Cải thiện function call backend.
+6. Làm module loading thật cho `Incorporate`.
+7. Mở rộng sanction policy sang backend/VM.
+8. Thêm type checker.

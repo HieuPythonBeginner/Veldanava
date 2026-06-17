@@ -89,34 +89,22 @@ if (x > 0):
 
 ## Sanction
 
-`sanction` is lowercase and uses flat entries only:
+`Sanction` is uppercase and uses flat entries only:
 
 ```veldanava
-Primordial_Regalia;
-
-sanction:
+Sanction:
     plus;
     myfunc();
-    myclass();
-;
 ```
-
-Rules:
 
 - `Ident;` is an operator-style sanction entry.
 - `Ident();` is a callable/class-style sanction entry.
-- Duplicate names are rejected within the same shape. `plus;` and `plus();` are allowed because they are different entry shapes.
-- Section syntax is rejected:
 
 ```veldanava
-sanction:
-    operators:
-        plus;
-    funcs:
-        myfunc();
-    oop:
-        myclass();
-;
+Sanction:
+    plus;
+    myfunc();
+    MyClass();
 ```
 
 Current parser collects `SanctionBlockNode`; semantic validation enforces sanctioned arithmetic operators and non-built-in calls.

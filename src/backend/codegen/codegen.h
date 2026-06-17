@@ -21,6 +21,7 @@ public:
 private:
     std::vector<vm::Instruction> instructions_;
     int next_reg_;
+    std::unordered_map<std::string, int> function_table_;
 
     // Old single-scope storage.
     std::unordered_map<std::string, int> var_regs_;

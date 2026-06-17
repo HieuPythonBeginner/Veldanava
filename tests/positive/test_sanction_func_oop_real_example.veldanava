@@ -1,6 +1,6 @@
 Primordial_Regalia;
 
-sanction:
+Sanction:
     plus;
     minus;
     print();

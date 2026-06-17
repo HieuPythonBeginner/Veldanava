@@ -39,6 +39,7 @@ std::vector<vm::Instruction> CodeGenerator::generate(ast::ProgramNode* program) 
     string_pool_.clear();
     string_indices_.clear();
     incorporated_modules_.clear();
+    function_table_.clear();
 
     // Simple lexical scoping for variables.
     // scope_level 0 is the outermost scope.
@@ -279,22 +280,14 @@ void CodeGenerator::gen_stmt(ast::Node* node) {
         case ast::NodeKind::BinaryExpr:
             gen_expr(node);
             break;
-        case ast::NodeKind::FuncCall: {
-            auto* call = static_cast<ast::FuncCallNode*>(node);
-            if (call->name == "print" || call->name == "scribe") {
-                for (auto& arg : call->args) {
-                    int reg = gen_expr(arg.get());
-                    instructions_.emplace_back(vm::Opcode::PRINT, reg, 0, 0);
-                }
-            }
-            break;
-        }
         case ast::NodeKind::FuncDef: {
             auto* func = static_cast<ast::FuncDefNode*>(node);
+            function_table_[func->name] = current_pos();
             var_scope_stack_.clear();
             next_reg_ = 0;
             push_scope();
             gen_stmt(func->body.get());
+            pop_scope();
             break;
         }
         case ast::NodeKind::GenesisDecl: {
@@ -460,15 +453,22 @@ int CodeGenerator::gen_expr(ast::Node* node) {
             if (!is_module_function_available(call->name)) {
                 throw std::runtime_error("Module function '" + call->name + "()' requires Incorporate '" + required_module_for_function(call->name) + "'");
             }
-            if (call->name == "range") {
-                int arg_reg = gen_expr(call->args[0].get());
-                int reg = next_reg_++;
-                instructions_.emplace_back(vm::Opcode::MOV, reg, arg_reg, 0);
-                return reg;
-            }
-            int result_reg = 0;
-            for (auto& arg : call->args) {
-                result_reg = gen_expr(arg.get());
+            int result_reg = next_reg_++;
+            auto it = function_table_.find(call->name);
+            if (it != function_table_.end()) {
+                int func_start = it->second;
+                for (size_t i = 0; i < call->args.size() && i < 15; i++) {
+                    int arg_reg = gen_expr(call->args[i].get());
+                    instructions_.emplace_back(vm::Opcode::MOV, i + 1, arg_reg, 0);
+                }
+                instructions_.emplace_back(vm::Opcode::CALL, result_reg, func_start, (int)call->args.size());
+            } else {
+                int func_idx = add_string(call->name);
+                for (size_t i = 0; i < call->args.size() && i < 15; i++) {
+                    int arg_reg = gen_expr(call->args[i].get());
+                    instructions_.emplace_back(vm::Opcode::MOV, i + 1, arg_reg, 0);
+                }
+                instructions_.emplace_back(vm::Opcode::CALL, result_reg, func_idx, (int)call->args.size());
             }
             return result_reg;
         }

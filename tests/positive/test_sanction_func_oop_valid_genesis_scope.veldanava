@@ -2,7 +2,7 @@ Primordial_Regalia;
 
 genesis func main():
     genesis if true:
-        sanction:
+        Sanction:
             plus;
             print();
             MyClass();

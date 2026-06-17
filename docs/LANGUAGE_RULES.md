@@ -41,9 +41,9 @@ Without this header, God Mode syntax is rejected.
 | `Primordial_Regalia` | Required at the start of the file. Enables God Mode syntax. |
 | `genesis` | Prefix for God Mode declarations/statements. |
 | `Incorporate` | Import/module declaration. Parsed only for now. |
-| `sanction` | Flat global whitelist block. Parsed only for now. |
+| `Sanction` | Flat global whitelist block. Parsed only for now. |
 
-`Sanction` uppercase is accepted by the lexer for compatibility, but the documented keyword is lowercase `sanction`.
+`Sanction` uppercase is the only accepted keyword.
 
 ## God Mode syntax
 
@@ -99,12 +99,12 @@ genesis Incorporate "math";
 
 ## Sanction syntax
 
-`sanction` uses flat entries only:
+`Sanction` uses flat entries only:
 
 ```veldanava
 Primordial_Regalia;
 
-sanction:
+Sanction:
     plus;
     myfunc();
     myclass();
@@ -121,14 +121,14 @@ Entry rules:
 Duplicate names are rejected within the same entry shape. `plus;` and `plus();` are allowed because they are different shapes. These are invalid:
 
 ```veldanava
-sanction:
+Sanction:
     plus;
     plus;
 ;
 ```
 
 ```veldanava
-sanction:
+Sanction:
     myfunc();
     myfunc();
 ;
@@ -137,7 +137,7 @@ sanction:
 Section syntax is rejected. Do not write:
 
 ```veldanava
-sanction:
+Sanction:
     operators:
         plus;
     funcs:
@@ -153,7 +153,7 @@ The parser rejects it with:
 Sanction block does not support operators/funcs/oop sections; use flat entries only
 ```
 
-Current status: `sanction` is collected into `SanctionBlockNode` and semantic validation enforces arithmetic operators plus non-built-in calls.
+Current status: `Sanction` is collected into `SanctionBlockNode` and semantic validation enforces arithmetic operators plus non-built-in calls.
 
 ## Control flow
 
@@ -267,7 +267,7 @@ Expected output:
 
 ## Current limitations
 
-- `sanction` enforces arithmetic operators and non-built-in calls; real backend policy can still be expanded.
+- `Sanction` enforces arithmetic operators and non-built-in calls; real backend policy can still be expanded.
 - `Incorporate` has minimal module tracking; known math functions require `genesis Incorporate "math";`.
 - `ownership::init()` is currently a no-op.
 - Class/struct codegen is incomplete.

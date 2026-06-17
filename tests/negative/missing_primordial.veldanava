@@ -1,0 +1,3 @@
+genesis func main():
+    genesis let i32 x = 1;
+;

@@ -14,7 +14,7 @@ plus:
 
 - `genesis`
 - `Incorporate`
-- lowercase `sanction`
+- `Sanction`
 
 Logical keywords `and`, `or`, and `not` are implemented for boolean-style expressions. `elif` is recognized but not implemented as a statement yet.
 
@@ -48,7 +48,7 @@ genesis func main():
     genesis print("hello");
 ;
 
-sanction:
+Sanction:
     plus;
     myfunc();
     myclass();
@@ -58,7 +58,7 @@ sanction:
 Sectioned sanction syntax is rejected:
 
 ```veldanava
-sanction:
+Sanction:
     operators:
         plus;
     funcs:
@@ -74,6 +74,6 @@ Some original goals still remain valid as future work:
 
 - Semantic validation pass.
 - Real module loading for `Incorporate`.
-- Full `sanction` backend policy beyond current semantic validation.
+- Full `Sanction` backend policy beyond current semantic validation.
 - Ownership/borrowing checks.
 - Test migration to current syntax.

@@ -106,6 +106,7 @@ struct IfStmtNode : Node {
     std::unique_ptr<Node> condition;
     std::unique_ptr<Node> then_block;
     std::unique_ptr<Node> else_block;
+    std::vector<std::pair<std::unique_ptr<Node>, std::unique_ptr<Node>>> elif_chain;
     IfStmtNode() : Node(NodeKind::IfStmt) {}
 };
 

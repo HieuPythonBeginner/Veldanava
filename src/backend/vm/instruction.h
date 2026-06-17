@@ -9,6 +9,9 @@ enum class Opcode {
     LOAD, STORE,
     IMM,
     PRINT,
+    PUSH, POP,
+    NEW, SETFIELD, GETFIELD,
+    SANCTION_CHECK,
 };
 
 struct Instruction {

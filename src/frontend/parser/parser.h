@@ -23,9 +23,10 @@ private:
     bool match(lexer::TokenType type);
     bool check(lexer::TokenType type) const;
 
-    std::unique_ptr<ast::Node> declaration();
-    std::unique_ptr<ast::Node> statement();
-    std::unique_ptr<ast::Node> block_body();
+    std::unique_ptr<ast::Node> genesis_declaration();
+    std::unique_ptr<ast::Node> genesis_statement();
+    std::unique_ptr<ast::Node> genesis_block_body();
+
     std::unique_ptr<ast::Node> expression();
     std::unique_ptr<ast::Node> assignment();
     std::unique_ptr<ast::Node> equality();
@@ -35,14 +36,10 @@ private:
     std::unique_ptr<ast::Node> unary();
     std::unique_ptr<ast::Node> primary();
 
-    std::unique_ptr<ast::Node> parse_genesis();
-    std::unique_ptr<ast::Node> parse_incorporate();
-    std::unique_ptr<ast::Node> parse_sanction();
     void check_permission(const std::string& feature);
 
-    std::unique_ptr<ast::Node> genesis_declaration();
-    std::unique_ptr<ast::Node> genesis_statement();
-    std::unique_ptr<ast::Node> genesis_block_body();
+    std::unique_ptr<ast::Node> parse_incorporate();
+    std::unique_ptr<ast::Node> parse_sanction();
 };
 
 std::unique_ptr<ast::ProgramNode> parse_source(const std::string& src);
