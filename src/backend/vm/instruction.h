@@ -12,6 +12,7 @@ enum class Opcode {
     PUSH, POP,
     NEW, SETFIELD, GETFIELD,
     SANCTION_CHECK,
+    SQRT, ABS, FLOOR, CEIL, POW, SIN, COS, TAN,
 };
 
 struct Instruction {

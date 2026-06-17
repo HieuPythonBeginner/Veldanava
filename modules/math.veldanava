@@ -1,8 +1,33 @@
-func sqrt(i32 x) -> i32:
-func sin(i32 x) -> i32:
-func cos(i32 x) -> i32:
-func tan(i32 x) -> i32:
-func abs(i32 x) -> i32:
-func floor(i32 x) -> i32:
-func ceil(i32 x) -> i32:
-func pow(i32 x, i32 y) -> i32:
+Primordial_Regalia;
+
+genesis func sqrt(i32 x) -> i32:
+    genesis return x;
+;
+
+genesis func sin(i32 x) -> i32:
+    genesis return x;
+;
+
+genesis func cos(i32 x) -> i32:
+    genesis return x;
+;
+
+genesis func tan(i32 x) -> i32:
+    genesis return x;
+;
+
+genesis func abs(i32 x) -> i32:
+    genesis return x;
+;
+
+genesis func floor(i32 x) -> i32:
+    genesis return x;
+;
+
+genesis func ceil(i32 x) -> i32:
+    genesis return x;
+;
+
+genesis func pow(i32 x, i32 y) -> i32:
+    genesis return x;
+;

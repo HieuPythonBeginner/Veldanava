@@ -1,6 +1,7 @@
 #include "vm.h"
 #include <iostream>
 #include <unordered_set>
+#include <cmath>
 
 namespace vm {
 
@@ -153,23 +154,69 @@ void VirtualMachine::run(int max_instructions) {
                 }
                 break;
             case Opcode::CALL: {
-                int func_idx = instr.arg2;
-                int argc = instr.arg3;
                 int return_reg = instr.arg1;
-                if (func_idx >= 0 && func_idx < (int)string_pool_.size()) {
-                    std::string func_name = string_pool_[func_idx];
-                    int func_argc = 0;
-                    auto func = get_function(func_name, func_argc);
-                    if (func) {
-                        std::vector<int> args(argc);
-                        for (int i = 0; i < argc && i < 16; i++) {
-                            args[i] = registers_[i + 1];
-                        }
-                        int result = func(this, argc, args.data());
-                        if (return_reg >= 0 && return_reg < 16) {
-                            registers_[return_reg] = result;
+                int target = instr.arg2;
+                int argc = instr.arg3;
+                int result = 0;
+                
+                if (target >= 1000) {
+                    int func_idx = target - 1000;
+                    if (func_idx >= 0 && func_idx < (int)string_pool_.size()) {
+                        std::string func_name = string_pool_[func_idx];
+                        int func_argc = 0;
+                        auto func = get_function(func_name, func_argc);
+                        if (func) {
+                            std::vector<int> args(argc);
+                            for (int i = 0; i < argc && i < 16; i++) {
+                                args[i] = registers_[i + 1];
+                            }
+                            result = func(this, argc, args.data());
                         }
                     }
+                } else {
+                    int saved_pc = pc_;
+                    pc_ = target;
+                    bool returned = false;
+                    while (pc_ < memory_.size() && !returned) {
+                        Instruction& ci = memory_[pc_++];
+                        switch (ci.opcode) {
+                            case Opcode::RET:
+                                result = registers_[0];
+                                returned = true;
+                                break;
+                            case Opcode::NOP: break;
+                            case Opcode::MOV:
+                                registers_[ci.arg1] = registers_[ci.arg2];
+                                break;
+                            case Opcode::IMM:
+                                registers_[ci.arg1] = ci.arg2;
+                                break;
+                            case Opcode::ADD:
+                                registers_[ci.arg1] = registers_[ci.arg2] + registers_[ci.arg3];
+                                break;
+                            case Opcode::SUB:
+                                registers_[ci.arg1] = registers_[ci.arg2] - registers_[ci.arg3];
+                                break;
+                            case Opcode::MUL:
+                                registers_[ci.arg1] = registers_[ci.arg2] * registers_[ci.arg3];
+                                break;
+                            case Opcode::DIV:
+                                if (ci.arg3 != 0)
+                                    registers_[ci.arg1] = registers_[ci.arg2] / ci.arg3;
+                                break;
+                            case Opcode::MOD:
+                                if (ci.arg3 != 0)
+                                    registers_[ci.arg1] = registers_[ci.arg2] % ci.arg3;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    pc_ = saved_pc;
+                }
+                
+                if (return_reg >= 0 && return_reg < 16) {
+                    registers_[return_reg] = result;
                 }
                 break;
             }
@@ -250,6 +297,55 @@ void VirtualMachine::run(int max_instructions) {
                                   << "' not found in Sanction block\n";
                     }
                 }
+                break;
+            }
+            case Opcode::SQRT: {
+                int src = instr.arg2;
+                int dst = instr.arg1;
+                registers_[dst] = (int)std::sqrt((double)registers_[src]);
+                break;
+            }
+            case Opcode::ABS: {
+                int src = instr.arg2;
+                int dst = instr.arg1;
+                registers_[dst] = std::abs(registers_[src]);
+                break;
+            }
+            case Opcode::FLOOR: {
+                int src = instr.arg2;
+                int dst = instr.arg1;
+                registers_[dst] = (int)std::floor((double)registers_[src]);
+                break;
+            }
+            case Opcode::CEIL: {
+                int src = instr.arg2;
+                int dst = instr.arg1;
+                registers_[dst] = (int)std::ceil((double)registers_[src]);
+                break;
+            }
+            case Opcode::POW: {
+                int base = instr.arg2;
+                int exp = instr.arg3;
+                int dst = instr.arg1;
+                registers_[dst] = (int)std::pow((double)registers_[base], (double)registers_[exp]);
+                break;
+            }
+            case Opcode::SIN: {
+                int src = instr.arg2;
+                int dst = instr.arg1;
+                registers_[dst] = (int)std::sin((double)registers_[src]);
+                break;
+            }
+            case Opcode::COS: {
+                int src = instr.arg2;
+                int dst = instr.arg1;
+                registers_[dst] = (int)std::cos((double)registers_[src]);
+                break;
+            }
+            case Opcode::TAN: {
+                int src = instr.arg2;
+                int dst = instr.arg1;
+                registers_[dst] = (int)std::tan((double)registers_[src]);
                 break;
             }
             default:

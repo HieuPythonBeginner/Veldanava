@@ -1,6 +1,5 @@
 #include "frontend/parser/parser.h"
 #include "frontend/lexer/lexer.h"
-#include "frontend/module/module_loader.h"
 #include "backend/codegen/codegen.h"
 #include "backend/vm/vm.h"
 #include "middle/ownership/ownership.h"
@@ -46,17 +45,6 @@ int main(int argc, char** argv) {
             auto bytecode = gen.generate(program.get());
             vm::VirtualMachine vm;
             vm.set_strings(gen.get_string_pool());
-            
-            auto loaded_modules = module::ModuleLoader::instance().get_loaded_modules();
-            for (const auto& mod : loaded_modules) {
-                const auto& funcs = module::ModuleLoader::instance().get_functions(mod);
-                for (const auto& func : funcs) {
-                    auto native = module::ModuleLoader::instance().get_function(func.name);
-                    if (native) {
-                        vm.register_function(func.name, native, (int)func.param_types.size());
-                    }
-                }
-            }
             
             vm.register_function("print", [](vm::VirtualMachine* v, int argc, const int* argv) -> int {
                 for (int i = 0; i < argc; i++) {

@@ -1,4 +1,5 @@
 #include "codegen.h"
+#include "frontend/module/module_loader.h"
 #include "vm/instruction.h"
 #include <cstdlib>
 #include <cmath>
@@ -41,14 +42,39 @@ std::vector<vm::Instruction> CodeGenerator::generate(ast::ProgramNode* program) 
     incorporated_modules_.clear();
     function_table_.clear();
 
-    // Simple lexical scoping for variables.
-    // scope_level 0 is the outermost scope.
     var_scope_stack_.clear();
     var_scope_stack_.push_back(var_regs_);
+
+    for (const auto& mod : incorporated_modules_) {
+        const auto* mod_ast = module::ModuleLoader::instance().get_module_ast(mod);
+        if (mod_ast) {
+            for (auto& stmt : mod_ast->statements) {
+                if (stmt->kind == ast::NodeKind::GenesisDecl) {
+                    auto* decl = static_cast<ast::GenesisDeclNode*>(stmt.get());
+                    if (decl->kind == "func") {
+                        function_table_[decl->name] = current_pos();
+                        var_scope_stack_.clear();
+                        next_reg_ = 0;
+                        push_scope();
+                        for (size_t i = 0; i < decl->params.size(); i++) {
+                            var_scope_stack_.back()[decl->params[i].first] = i + 1;
+                        }
+                        if (decl->body) {
+                            gen_stmt(decl->body.get());
+                        }
+                        instructions_.emplace_back(vm::Opcode::MOV, 0, 0, 0);
+                        instructions_.emplace_back(vm::Opcode::RET);
+                        pop_scope();
+                    }
+                }
+            }
+        }
+    }
 
     for (auto& stmt : program->statements) {
         gen_stmt(stmt.get());
     }
+
     instructions_.emplace_back(vm::Opcode::HLT);
     return instructions_;
 }
@@ -286,17 +312,65 @@ void CodeGenerator::gen_stmt(ast::Node* node) {
             var_scope_stack_.clear();
             next_reg_ = 0;
             push_scope();
+            for (size_t i = 0; i < func->params.size(); i++) {
+                var_scope_stack_.back()[func->params[i].first] = i + 1;
+            }
             gen_stmt(func->body.get());
             pop_scope();
             break;
         }
         case ast::NodeKind::GenesisDecl: {
             auto* decl = static_cast<ast::GenesisDeclNode*>(node);
-            var_scope_stack_.clear();
-            next_reg_ = 0;
-            push_scope();
-            if (decl->body) {
-                gen_stmt(decl->body.get());
+            if (decl->kind == "func") {
+                function_table_[decl->name] = current_pos();
+                var_scope_stack_.clear();
+                next_reg_ = 0;
+                push_scope();
+                for (size_t i = 0; i < decl->params.size(); i++) {
+                    var_scope_stack_.back()[decl->params[i].first] = i + 1;
+                }
+                int result_reg = 0;
+                if (decl->name == "sqrt" && !decl->params.empty()) {
+                    result_reg = next_reg_++;
+                    instructions_.emplace_back(vm::Opcode::SQRT, result_reg, 1, 0);
+                } else if (decl->name == "abs" && !decl->params.empty()) {
+                    result_reg = next_reg_++;
+                    instructions_.emplace_back(vm::Opcode::ABS, result_reg, 1, 0);
+                } else if (decl->name == "floor" && !decl->params.empty()) {
+                    result_reg = next_reg_++;
+                    instructions_.emplace_back(vm::Opcode::FLOOR, result_reg, 1, 0);
+                } else if (decl->name == "ceil" && !decl->params.empty()) {
+                    result_reg = next_reg_++;
+                    instructions_.emplace_back(vm::Opcode::CEIL, result_reg, 1, 0);
+                } else if (decl->name == "sin" && !decl->params.empty()) {
+                    result_reg = next_reg_++;
+                    instructions_.emplace_back(vm::Opcode::SIN, result_reg, 1, 0);
+                } else if (decl->name == "cos" && !decl->params.empty()) {
+                    result_reg = next_reg_++;
+                    instructions_.emplace_back(vm::Opcode::COS, result_reg, 1, 0);
+                } else if (decl->name == "tan" && !decl->params.empty()) {
+                    result_reg = next_reg_++;
+                    instructions_.emplace_back(vm::Opcode::TAN, result_reg, 1, 0);
+                } else if (decl->name == "pow" && decl->params.size() >= 2) {
+                    result_reg = next_reg_++;
+                    instructions_.emplace_back(vm::Opcode::POW, result_reg, 1, 2);
+                } else {
+                    if (decl->body) {
+                        gen_stmt(decl->body.get());
+                    }
+                    result_reg = 0;
+                }
+                instructions_.emplace_back(vm::Opcode::MOV, 0, result_reg, 0);
+                instructions_.emplace_back(vm::Opcode::RET);
+                pop_scope();
+            } else {
+                var_scope_stack_.clear();
+                next_reg_ = 0;
+                push_scope();
+                if (decl->body) {
+                    gen_stmt(decl->body.get());
+                }
+                pop_scope();
             }
             break;
         }
