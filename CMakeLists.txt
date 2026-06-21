@@ -5,18 +5,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(veldanc
-    src/main.cpp
-    src/frontend/lexer/lexer.cpp
-    src/frontend/parser/parser.cpp
-    src/frontend/module/module_loader.cpp
-    src/middle/ownership/ownership.cpp
-    src/middle/typechecker/typechecker.cpp
-    src/backend/codegen/codegen.cpp
-    src/backend/vm/vm.cpp
-)
+option(BUILD_SHARED_LIBS "Build True_Dragon_Core as shared library" ON)
 
-target_include_directories(veldanc PRIVATE ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/frontend
-    ${CMAKE_SOURCE_DIR}/src/middle
-    ${CMAKE_SOURCE_DIR}/src/backend)
+add_subdirectory(Veldanava/compiler)
+
+add_executable(veldanc Veldanava/compiler/src/main.cpp)
+target_link_libraries(veldanc PRIVATE True_Dragon_Core)
+
+add_subdirectory(Veldora)

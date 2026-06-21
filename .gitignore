@@ -1,5 +1,7 @@
 build/
+build-*/
 *.o
 *.a
 *.out
+*.cache
 .DS_Store

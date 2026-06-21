@@ -1,0 +1,19 @@
+#Pre_Descent Primordial_Regalia
+Primordial_Regalia;
+
+Sanction:
+    plus;
+;
+
+genesis func main():
+    genesis let i32 x = 1;
+    genesis if x == 1:
+        genesis print(100);
+    elif x == 2:
+        genesis print(200);
+    elif x == 3:
+        genesis print(300);
+    else:
+        genesis print(999);
+    ;
+;

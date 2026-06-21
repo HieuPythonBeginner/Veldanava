@@ -1,0 +1,38 @@
+#Pre_Descent Primordial_Regalia
+Primordial_Regalia;
+
+Sanction:
+    plus;
+    print();
+    Point();
+    Pair();
+    sum_pair();
+    double_x();
+;
+
+genesis class Point:
+    genesis let i32 x;
+    genesis let i32 y;
+    genesis func double_x(self: Point) -> i32:
+        genesis return self.x + self.x;
+    ;
+;
+
+genesis struct Pair:
+    genesis let i32 left;
+    genesis let i32 right;
+;
+
+genesis func sum_pair(p: Pair) -> i32:
+    genesis return p.left + p.right;
+;
+
+genesis func main():
+    genesis let Point p = Point(2, 3);
+    genesis let Pair pair = Pair(4, 5);
+    genesis print(p.x);
+    genesis print(p.double_x());
+    genesis print(sum_pair(pair));
+    genesis p.y = 7;
+    genesis print(p.y);
+;

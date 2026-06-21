@@ -1,0 +1,24 @@
+# Hello in Veldora language
+say "Hello from Veldora standalone!"
+
+let x equals 10
+let y equals 20
+say x
+say y
+
+if x less_than y then
+    say "x < y"
+else
+    say "x >= y"
+end
+
+while x greater_than 0 then
+    say x
+    let x equals x subtract 1
+end
+
+func double(n)
+    return n multiply 2
+end
+
+say double(5)
