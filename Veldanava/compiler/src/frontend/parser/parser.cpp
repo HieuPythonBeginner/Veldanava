@@ -139,7 +139,7 @@ std::unique_ptr<ast::ProgramNode> Parser::parse() {
         match(lexer::TokenType::Genesis);
 
         check_permission("genesis");
-        auto stmt = genesis_declaration();
+        auto stmt = genesis_statement();
         if (stmt) program->statements.push_back(std::move(stmt));
     }
 
