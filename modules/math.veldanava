@@ -1,4 +1,3 @@
-Primordial_Regalia;
 
 genesis func sqrt(i32 x) -> i32:
     genesis return x;

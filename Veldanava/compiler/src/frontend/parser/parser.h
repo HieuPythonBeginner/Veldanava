@@ -16,7 +16,8 @@ private:
     const std::vector<lexer::Token>& tokens_;
     size_t pos_;
     bool has_beginning_eden_ = false;
-    bool has_legacy_primordial_regalia_ = false;
+    bool has_god_mode_ = false;
+    bool has_basic_features_ = false;
 
     lexer::Token peek() const;
     lexer::Token prev() const;
@@ -42,8 +43,10 @@ private:
     std::vector<std::unique_ptr<ast::Node>> parse_call_args();
 
     void check_permission(const std::string& feature);
-    bool beginning_eden_enabled() const;
-    void require_beginning_eden(const std::string& feature);
+    bool god_mode_enabled() const;
+    bool basic_features_enabled() const;
+    void require_god_mode(const std::string& feature);
+    void require_basic_features(const std::string& feature);
 
     std::unique_ptr<ast::Node> parse_incorporate();
     std::unique_ptr<ast::Node> parse_sanction();

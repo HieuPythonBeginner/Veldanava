@@ -39,25 +39,12 @@ int main(int argc, char** argv) {
 
         std::string first_line = src.substr(0, src.find('\n'));
         bool has_pre_descent = (first_line.find("#Pre_Descent") != std::string::npos);
-        bool has_primordial = (first_line.find("Primordial_Regalia") != std::string::npos);
 
-        if (has_pre_descent && has_primordial) {
-            // AOT mode - proceed normally
-        } else if (!has_pre_descent && !has_primordial) {
+        if (!has_pre_descent) {
             std::string veldora_path = "/home/dr-bright-rathalus/Veldanava/build-veldora/Veldora_Hybrid_AOT_JIT_Interpreter";
-            std::cerr << "[Routing] No magic header — switching to Veldora Hybrid mode\n";
+            std::cerr << "[Routing] Hybrid header — switching to Veldanava Hybrid mode\n";
             execl(veldora_path.c_str(), veldora_path.c_str(), argv[1], nullptr);
-            std::cerr << "[ERROR] Failed to launch Veldora Hybrid\n";
-            return 1;
-        } else if (has_pre_descent && !has_primordial) {
-            std::cerr << "[ERROR] Missing 'Primordial_Regalia' in magic header on line 1\n";
-            std::cerr << "[HINT] Correct syntax: #Pre_Descent Primordial_Regalia\n";
-            std::cerr << "[HINT] To use veldanc compiler, you must type the exact magic header on line 1\n";
-            return 1;
-        } else if (!has_pre_descent && has_primordial) {
-            std::cerr << "[ERROR] Missing '#Pre_Descent' in magic header on line 1\n";
-            std::cerr << "[HINT] Correct syntax: #Pre_Descent Primordial_Regalia\n";
-            std::cerr << "[HINT] To use veldanc compiler, you must type the exact magic header on line 1\n";
+            std::cerr << "[ERROR] Failed to launch Veldanava Hybrid\n";
             return 1;
         }
 

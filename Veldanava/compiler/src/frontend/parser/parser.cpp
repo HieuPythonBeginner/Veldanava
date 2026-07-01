@@ -7,7 +7,7 @@
 namespace parser {
 
 Parser::Parser(const std::vector<lexer::Token>& tokens)
-    : tokens_(tokens), pos_(0), has_beginning_eden_(false), has_legacy_primordial_regalia_(false) {}
+    : tokens_(tokens), pos_(0), has_beginning_eden_(false), has_god_mode_(false), has_basic_features_(false) {}
 
 lexer::Token Parser::peek() const {
     if (pos_ < tokens_.size()) return tokens_[pos_];
@@ -33,15 +33,27 @@ bool Parser::check(lexer::TokenType type) const {
 }
 
 void Parser::check_permission(const std::string& feature) {
-    (void)feature;
+    if (!has_god_mode_) {
+        throw std::runtime_error("Permission denied: '" + feature + "' requires god mode (#Pre_Descent Primordial_Regalia)");
+    }
 }
 
-bool Parser::beginning_eden_enabled() const {
-    return has_beginning_eden_ || has_legacy_primordial_regalia_;
+bool Parser::god_mode_enabled() const {
+    return has_god_mode_;
 }
 
-void Parser::require_beginning_eden(const std::string& feature) {
-    if (!beginning_eden_enabled()) {
+bool Parser::basic_features_enabled() const {
+    return has_basic_features_;
+}
+
+void Parser::require_god_mode(const std::string& feature) {
+    if (!god_mode_enabled()) {
+        throw std::runtime_error("Permission denied: '" + feature + "' requires god mode (#Pre_Descent Primordial_Regalia)");
+    }
+}
+
+void Parser::require_basic_features(const std::string& feature) {
+    if (!basic_features_enabled()) {
         throw std::runtime_error("#Beginning_Eden is required to enable '" + feature + "'");
     }
 }
@@ -85,15 +97,17 @@ std::unique_ptr<ast::ProgramNode> Parser::parse() {
             throw std::runtime_error("Unexpected token: " + peek().lexeme);
         }
         if (match(lexer::TokenType::Pre_Descent)) {
+            if (match(lexer::TokenType::Primordial_Regalia)) {
+                has_god_mode_ = true;
+            }
             continue;
         }
         if (match(lexer::TokenType::Beginning_Eden)) {
+            if (!has_god_mode_) {
+                throw std::runtime_error("Permission denied: '#Beginning_Eden' requires god mode (#Pre_Descent Primordial_Regalia)");
+            }
             has_beginning_eden_ = true;
-            continue;
-        }
-        if (match(lexer::TokenType::Primordial_Regalia)) {
-            has_legacy_primordial_regalia_ = true;
-            match(lexer::TokenType::Semi);
+            has_basic_features_ = true;
             continue;
         }
 
@@ -346,7 +360,7 @@ std::unique_ptr<ast::Node> Parser::genesis_statement() {
     }
 
     if (match(lexer::TokenType::If)) {
-        require_beginning_eden("if");
+        require_basic_features("if");
         auto ifstmt = std::make_unique<ast::IfStmtNode>();
         if (check(lexer::TokenType::LParen)) {
             throw std::runtime_error("This language requires: if <cond>: (no parentheses) - got 'if ('");
@@ -377,7 +391,7 @@ std::unique_ptr<ast::Node> Parser::genesis_statement() {
     }
 
     if (match(lexer::TokenType::While)) {
-        require_beginning_eden("while");
+        require_basic_features("while");
         auto whilestmt = std::make_unique<ast::WhileStmtNode>();
         if (check(lexer::TokenType::LParen)) {
             throw std::runtime_error("This language requires: while <cond>: (no parentheses) - got 'while ('");
@@ -391,7 +405,7 @@ std::unique_ptr<ast::Node> Parser::genesis_statement() {
     }
 
     if (match(lexer::TokenType::For)) {
-        require_beginning_eden("for");
+        require_basic_features("for");
 
         auto forstmt = std::make_unique<ast::ForStmtNode>();
         if (!check(lexer::TokenType::Ident)) throw std::runtime_error("Expected iterator");

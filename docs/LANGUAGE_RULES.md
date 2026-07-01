@@ -12,15 +12,38 @@ Core syntax rules:
 - Every statement ends with a mandatory `;`.
 - Empty statement `;` is allowed at top level.
 
+## Modes
+
+Every `.veldanava` file is a Veldanava file. The compiler has 2 processing modes:
+
+**Compiler mode (AOT):**
+```veldanava
+#Pre_Descent Primordial_Regalia
+
+#Beginning_Eden
+```
+Xử lý bởi `veldanc`, biên dịch sang bytecode rồi chạy trên VM.
+
+**Hybrid mode (JIT/Interpreter):**
+```veldanava
+no magic header
+```
+Tự động chuyển sang `Veldanava Hybrid`, dùng Tier 1 interpreter + Tier 2 JIT.
+
 ## Required file header
 
-Every file must start with:
+To use Veldanava compiler mode, the file must start with:
 
 ```veldanava
-Primordial_Regalia;
+#Pre_Descent Primordial_Regalia
+
+#Beginning_Eden
 ```
 
-Without this header, God Mode syntax is rejected.
+`#Pre_Descent Primordial_Regalia` is the entry token that selects compiler mode.
+`#Beginning_Eden` unlocks the full feature set.
+
+The standalone `Primordial_Regalia;` statement is no longer accepted.
 
 ## Keywords
 
@@ -36,73 +59,43 @@ Without this header, God Mode syntax is rejected.
 
 ### Permission-based keywords
 
-| Keyword | Description |
+| Keyword / Directive | Description |
 |---|---|
-| `Primordial_Regalia` | Required at the start of the file. Enables God Mode syntax. |
+| `#Pre_Descent Primordial_Regalia` | Line-1 magic header. Selects compiler mode and enables god mode keywords. |
+| `#Beginning_Eden` | Enables basic programming features (`if`/`else`/`elif`, `while`, `for`, arrays, assignment, operators...). Requires god mode. |
 | `genesis` | Prefix for God Mode declarations/statements. |
 | `Incorporate` | Import/module declaration. Parsed only for now. |
 | `Sanction` | Flat global whitelist block. Parsed only for now. |
 
 `Sanction` uppercase is the only accepted keyword.
 
-## God Mode syntax
+### Permission system
 
-### Function
+Veldanava dùng 2 flags khóa keyword:
 
-```veldanava
-Primordial_Regalia;
+| Flag | Được mở bởi | Cho phép |
+|------|-------------|---------|
+| `has_god_mode_` | `#Pre_Descent Primordial_Regalia` (line 1) | `genesis`, `Sanction`, `Incorporate`, và directive `#Beginning_Eden` |
+| `has_basic_features_` | `#Beginning_Eden` (line 2) | `if/else/elif`, `while`, `for`, array, list, assignment, toán tử... |
 
-genesis func main():
-    genesis print("hello");
-;
-```
+### Permission-based keywords
 
-### Variable
+| Keyword / Directive | Description |
+|---|---|
+| `#Pre_Descent Primordial_Regalia` | Line-1 magic header. Selects compiler mode and enables god mode keywords. |
+| `#Beginning_Eden` | Enables basic programming features (`if`/`else`/`elif`, `while`, `for`, arrays, assignment, operators...). Requires god mode. |
+| `genesis` | Prefix for God Mode declarations/statements. |
+| `Incorporate` | Import/module declaration. Parsed only for now. |
+| `Sanction` | Flat global whitelist block. Parsed only for now. |
 
-```veldanava
-Primordial_Regalia;
-
-genesis func main():
-    genesis let i32 x = 42;
-;
-```
-
-### Class / struct
-
-```veldanava
-Primordial_Regalia;
-
-genesis class MyDragon:
-;
-
-genesis struct MyData:
-;
-```
-
-Class and struct declarations are parsed, but backend support is incomplete.
-
-### Incorporate
-
-```veldanava
-Primordial_Regalia;
-
-genesis Incorporate "math", io;
-```
-
-`Incorporate` accepts string literals or bare identifiers. The backend tracks incorporated modules and rejects known module functions unless their module is incorporated.
-
-Known module functions currently include math functions such as `sqrt`, `sin`, `cos`, `tan`, `abs`, `floor`, `ceil`, and `pow`; they require:
-
-```veldanava
-genesis Incorporate "math";
-```
-
-## Sanction syntax
+`Sanction` uppercase is the only accepted keyword.
 
 `Sanction` uses flat entries only:
 
 ```veldanava
-Primordial_Regalia;
+#Pre_Descent Primordial_Regalia
+
+#Beginning_Eden
 
 Sanction:
     plus;
@@ -160,40 +153,70 @@ Current status: `Sanction` is collected into `SanctionBlockNode` and semantic va
 ### If
 
 ```veldanava
-if x > 0:
-    genesis print("positive");
+#Pre_Descent Primordial_Regalia
+
+#Beginning_Eden
+
+genesis func main():
+    genesis if x > 0:
+        genesis print("positive");
+    ;
 ;
 ```
 
 Parentheses are not allowed:
 
 ```veldanava
-if (x > 0):
-    genesis print("invalid");
+#Pre_Descent Primordial_Regalia
+
+#Beginning_Eden
+
+genesis func main():
+    genesis if (x > 0):
+        genesis print("invalid");
+    ;
 ;
 ```
 
 ### While
 
 ```veldanava
-while x < 10:
-    genesis print(x);
+#Pre_Descent Primordial_Regalia
+
+#Beginning_Eden
+
+genesis func main():
+    genesis while x < 10:
+        genesis print(x);
+    ;
 ;
 ```
 
 Parentheses are not allowed:
 
 ```veldanava
-while (x < 10):
-    genesis print(x);
+#Pre_Descent Primordial_Regalia
+
+#Beginning_Eden
+
+genesis func main():
+    genesis while (x < 10):
+        genesis print(x);
+    ;
 ;
 ```
 
 ### For
 
 ```veldanava
-for i in range(10):
-    genesis print(i);
+#Pre_Descent Primordial_Regalia
+
+#Beginning_Eden
+
+genesis func main():
+    genesis for i in range(10):
+        genesis print(i);
+    ;
 ;
 ```
 
@@ -208,7 +231,9 @@ for i in range(10):
 Example:
 
 ```veldanava
-Primordial_Regalia;
+#Pre_Descent Primordial_Regalia
+
+#Beginning_Eden
 
 genesis func main():
     genesis if true:
@@ -235,35 +260,55 @@ if not b:
 ;
 ```
 
-`elif` is recognized by the lexer but not implemented as a statement yet; use nested `else` + `if`.
+`elif` is linked to `if`/`else` chains via the parser and codegen.
 
 ## Built-in functions
 
 - `print(value)` prints a value to stdout.
 - `range(n)` creates an integer iterator from `0` to `n - 1`.
 
-## Build and run
+## Unified compiler driver
+
+`running_true_dragon_core` is the single entry point for the entire Veldanava ecosystem. It auto-routes by file extension:
 
 ```bash
-cmake -B build -S .
-cmake --build build --target veldanc
-./build/veldanc <file.veldanava>
+./build/running_true_dragon_core <file>
 ```
 
-Smoke test:
+A shorter alias `velrun` is also provided:
 
 ```bash
-./build/veldanc tests/test_genesis_full.veldanava
+./velrun <file>
 ```
 
-Expected output:
+### Installation
 
-```text
-0
-1
-2
-[OK] Executed tests/test_genesis_full.veldanava
+For system-wide use (all users on the machine):
+
+```bash
+sudo cmake --build build --target install
 ```
+
+This copies `velrun` to `/usr/local/bin/`, which is already in every user's PATH.
+
+Alternatively, use the install script:
+
+```bash
+./install.sh
+```
+
+The script detects whether you have sudo access:
+- **With sudo**: installs system-wide to `/usr/local/bin/`
+- **Without sudo**: installs to `~/.local/bin/` and updates PATH if needed
+
+| Extension | Binary | Description |
+|-----------|--------|-------------|
+| `.veldanava` | `build/veldanc` | Veldanava compiler (AOT mode if `#Pre_Descent` present, otherwise auto-routes to Veldanava Hybrid) |
+| `.veldora` | `build-veldora/Veldora_Hybrid_AOT_JIT_Interpreter` | Veldora hybrid AOT/JIT/interpreter |
+| `.velzard` | `build-velzard/velzard_Interpreter` | Velzard interpreter |
+| `.velgrynd` | `build-velgrynd/velgrynd_JIT` | Velgrynd JIT |
+
+Each language has its own dedicated compiler/runtime. `running_true_dragon_core` simply selects the correct backend from the file extension.
 
 ## Current limitations
 

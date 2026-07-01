@@ -1,4 +1,4 @@
-#Pre_Descent Primordial_Regalia
+#Pre_Descent
 genesis func main():
     genesis let i32 x = 1;
 ;
